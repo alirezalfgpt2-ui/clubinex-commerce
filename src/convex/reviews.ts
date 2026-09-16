@@ -73,6 +73,32 @@ export const create = mutation({
   },
 });
 
+/** Like / unlike a review */
+export const toggleLike = mutation({
+  args: { reviewId: v.id("reviews") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const review = await ctx.db.get(args.reviewId);
+    if (!review) throw new Error("Review not found");
+    await ctx.db.patch(args.reviewId, {
+      likesCount: (review.likesCount ?? 0) + 1,
+    });
+  },
+});
+
+/** Admin: list all reviews */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const user = await ctx.db.get(userId);
+    if (!user || (user.role !== "admin" && user.role !== "manager")) return [];
+    return await ctx.db.query("reviews").order("desc").collect();
+  },
+});
+
 export const remove = mutation({
   args: { reviewId: v.id("reviews") },
   handler: async (ctx, args) => {
@@ -82,5 +108,21 @@ export const remove = mutation({
     if (!review) throw new Error("Review not found");
     if (review.userId !== userId) throw new Error("Unauthorized");
     await ctx.db.delete(args.reviewId);
+  },
+});
+
+/** Admin: update review status */
+export const updateStatus = mutation({
+  args: {
+    reviewId: v.id("reviews"),
+    status: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user || user.role !== "admin") throw new Error("Unauthorized");
+    await ctx.db.patch(args.reviewId, { status: args.status, isApproved: args.status === "approved" } as any);
+    return { success: true };
   },
 });

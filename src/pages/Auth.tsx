@@ -95,10 +95,26 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("anonymous");
-      // navigate(redirect); // Removed to rely on useEffect and avoid race condition
+      // Wrap signIn in a timeout so the UI never hangs indefinitely.
+      // In some environments the Convex HTTP action call may not resolve
+      // (e.g. unreachable backend, broken WebSocket transport).
+      const signInPromise = signIn("anonymous");
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("اتصال به سرور برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کنید.")), 15000),
+      );
+      const result = await Promise.race([signInPromise, timeoutPromise]);
+      if (result?.signingIn) {
+        navigate(redirect);
+      } else {
+        setError("ورود به عنوان مهمان انجام نشد. لطفاً دوباره تلاش کنید.");
+        setIsLoading(false);
+      }
     } catch (error) {
-      setError(`ورود به عنوان مهمان ناموفق بود: ${error instanceof Error ? error.message : "خطای ناشناخته"}`);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "ورود به عنوان مهمان ناموفق بود. لطفاً دوباره تلاش کنید.",
+      );
       setIsLoading(false);
     }
   };

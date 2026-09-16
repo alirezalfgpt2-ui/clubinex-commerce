@@ -85,6 +85,7 @@ export default function ReportsPage() {
   // ── Queries ──
   const productStats = useQuery(api.products.getStats);
   const orderStats = useQuery(api.orders.getStats);
+  const financialStats = useQuery(api.orders.getFinancialStats);
   const userCount = useQuery(api.users.getUserCount);
   const products = useQuery(api.products.listActive);
   const orders = useQuery(api.orders.list);
@@ -299,15 +300,88 @@ export default function ReportsPage() {
       {/* ── نمای کلی ── */}
       {activeTab === "overview" && (
         <>
+          {/* ── ردیف اول: آمار کلی ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard icon={Package} title="کل محصولات" value={productStats?.total ?? 0} color="bg-primary/10 text-primary" trend="↑ ۱۲٪ این ماه" />
-            <MetricCard icon={ShoppingCart} title="کل سفارشات" value={orderStats?.totalOrders ?? 0} color="bg-amber-500/10 text-amber-600" trend="↑ ۸٪ این ماه" />
-            <MetricCard icon={DollarSign} title="درآمد خالص" value={`${(orderStats?.totalRevenue ?? 0).toLocaleString("fa-IR")} ت`} color="bg-emerald-500/10 text-emerald-600" />
+            <MetricCard icon={Package} title="کل محصولات" value={productStats?.total ?? 0} color="bg-primary/10 text-primary" trend={`📦 ${productStats?.active ?? 0} فعال`} />
+            <MetricCard icon={ShoppingCart} title="کل سفارشات" value={orderStats?.totalOrders ?? 0} color="bg-amber-500/10 text-amber-600" trend={`🕐 ${orderStats?.pendingOrders ?? 0} در انتظار`} />
+            <MetricCard icon={DollarSign} title="درآمد کل" value={`${(financialStats?.totalRevenue ?? orderStats?.totalRevenue ?? 0).toLocaleString("fa-IR")} ت`} color="bg-emerald-500/10 text-emerald-600" trend={financialStats ? `میانگین: ${(financialStats.avgOrderValue ?? 0).toLocaleString("fa-IR")} ت` : undefined} />
             <MetricCard icon={Users} title="تعداد کاربران" value={userCount ?? 0} color="bg-sky-500/10 text-sky-600" />
           </div>
+
+          {/* ── ردیف دوم: آمار مالی ── */}
+          {financialStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { label: "مالیات", value: `${(financialStats.totalTax ?? 0).toLocaleString("fa-IR")} ت`, color: "text-violet-600" },
+                { label: "هزینه ارسال", value: `${(financialStats.totalShipping ?? 0).toLocaleString("fa-IR")} ت`, color: "text-blue-600" },
+                { label: "تخفیفات", value: `${(financialStats.totalDiscount ?? 0).toLocaleString("fa-IR")} ت`, color: "text-rose-600" },
+                { label: "بازپرداخت", value: `${(financialStats.totalRefunds ?? 0).toLocaleString("fa-IR")} ت`, color: "text-orange-600" },
+                { label: "نرخ بازپرداخت", value: `${financialStats.refundRate ?? 0}%`, color: "text-rose-600" },
+                { label: "مبلغ میانگین", value: `${(financialStats.avgOrderValue ?? 0).toLocaleString("fa-IR")} ت`, color: "text-emerald-600" },
+              ].map((item, i) => (
+                <div key={i} className="clay-card p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground">{item.label}</p>
+                  <p className={`text-sm font-bold mt-0.5 ${item.color}`}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── ردیف سوم: نمودار درآمد ۷ روز اخیر + وضعیت سفارشات ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* نمودار درآمد روزانه */}
+            <div className="clay-card p-5">
+              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> درآمد ۷ روز اخیر</h3>
+              {financialStats && financialStats.dailyRevenue ? (
+                <div className="space-y-2">
+                  {financialStats.dailyRevenue.map((d: any, i: number) => {
+                    const maxAmount = Math.max(...financialStats.dailyRevenue.map((x: any) => x.amount), 1);
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-[11px] text-muted-foreground w-12 text-left shrink-0">{d.date}</span>
+                        <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: `${Math.max((d.amount / maxAmount) * 100, d.amount > 0 ? 3 : 0)}%` }} />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground w-20 text-left shrink-0">{d.amount > 0 ? `${d.amount.toLocaleString("fa-IR")} ت` : "—"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-6">داده‌ای وجود ندارد.</p>
+              )}
+            </div>
+
+            {/* وضعیت سفارشات */}
+            <div className="clay-card p-5">
+              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> وضعیت سفارشات</h3>
+              {financialStats && financialStats.statusBreakdown ? (
+                <div className="space-y-3">
+                  {financialStats.statusBreakdown.filter((s: any) => s.count > 0).map((item: any, i: number) => {
+                    const maxC = Math.max(...financialStats.statusBreakdown.map((s: any) => s.count), 1);
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-xs">{item.label}</span>
+                          <span className="text-xs font-medium">{item.count} سفارش</span>
+                        </div>
+                        <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${Math.max((item.count / maxC) * 100, 2)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-6">داده‌ای وجود ندارد.</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── ردیف چهارم: پربازدید + پرفروش ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="clay-card p-5">
-              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> پربازدیدترین محصولات</h3>
+              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><Eye className="h-4 w-4 text-primary" /> پربازدیدترین محصولات</h3>
               {topProducts.length === 0 ? <p className="text-sm text-muted-foreground text-center py-6">هنوز داده‌ای وجود ندارد.</p> : (
                 <div className="space-y-3">
                   {topProducts.map((p: any) => {
@@ -316,7 +390,10 @@ export default function ReportsPage() {
                       <div key={p._id}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-medium truncate max-w-[150px]">{p.name}</span>
-                          <span className="text-[11px] text-muted-foreground">{p.views} بازدید</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground">{p.rating ? `⭐ ${p.rating}` : ""}</span>
+                            <span className="text-[11px] text-muted-foreground">{p.views} بازدید</span>
+                          </div>
                         </div>
                         <div className="h-3 bg-muted rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(p.views / maxV) * 100}%`, background: "linear-gradient(90deg, var(--primary), hsl(var(--primary) / 0.6))" }} />
@@ -327,30 +404,47 @@ export default function ReportsPage() {
                 </div>
               )}
             </div>
+
+            {/* نرخ تبدیل و سبد رها شده */}
             <div className="clay-card p-5">
-              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> وضعیت سفارشات</h3>
-              <div className="space-y-3">
-                {[
-                  { label: "در انتظار تأیید", count: orderStats?.pendingOrders ?? 0, color: "bg-amber-500" },
-                  { label: "پرداخت شده", count: Math.max((orderStats?.totalOrders ?? 0) - (orderStats?.pendingOrders ?? 0) - (orderStats?.deliveredOrders ?? 0), 0), color: "bg-sky-500" },
-                  { label: "تحویل شده", count: orderStats?.deliveredOrders ?? 0, color: "bg-emerald-500" },
-                ].map((item, i) => {
-                  const maxC = Math.max(orderStats?.totalOrders ?? 1, 1);
+              <h3 className="font-semibold text-sm mb-4 flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> تحلیل تبدیل و عملکرد</h3>
+              <div className="space-y-4">
+                {(() => {
+                  const totalViews = (products ?? []).reduce((s: number, p: any) => s + (p.views || 0), 0);
+                  const totalSold = (products ?? []).reduce((s: number, p: any) => s + (p.soldCount || 0), 0);
+                  const convRate = totalViews > 0 ? ((totalSold / totalViews) * 100).toFixed(1) : "0";
+                  const avgRating = (products ?? []).filter((p: any) => p.rating > 0);
+                  const overallRating = avgRating.length > 0 ? (avgRating.reduce((s: number, p: any) => s + p.rating, 0) / avgRating.length).toFixed(1) : "—";
                   return (
-                    <div key={i}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-xs">{item.label}</span>
-                        <span className="text-xs font-medium">{item.count} سفارش</span>
+                    <>
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-xs text-muted-foreground">کل بازدید محصولات</span>
+                        <span className="text-sm font-bold">{totalViews.toLocaleString("fa-IR")}</span>
                       </div>
-                      <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${Math.max((item.count / maxC) * 100, 2)}%` }} />
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-xs text-muted-foreground">کل فروش (تعداد)</span>
+                        <span className="text-sm font-bold">{totalSold.toLocaleString("fa-IR")}</span>
                       </div>
-                    </div>
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-xs text-muted-foreground">نرخ تبدیل (بازدید → فروش)</span>
+                        <span className="text-sm font-bold text-primary">{convRate}%</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b">
+                        <span className="text-xs text-muted-foreground">میانگین امتیاز</span>
+                        <span className="text-sm font-bold">⭐ {overallRating}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-xs text-muted-foreground">محصولات بدون فروش</span>
+                        <span className="text-sm font-bold text-rose-500">{(products ?? []).filter((p: any) => !p.soldCount || p.soldCount === 0).length}</span>
+                      </div>
+                    </>
                   );
-                })}
+                })()}
               </div>
             </div>
           </div>
+
+          {/* ── هشدارها ── */}
           {productStats && productStats.lowStock > 0 && (
             <div className="clay-card p-5 border border-amber-300/50">
               <h3 className="font-semibold text-amber-700 dark:text-amber-400 mb-1">⚠️ هشدار موجودی کم</h3>

@@ -77,11 +77,15 @@ export default defineConfig({
       '@convex-dev/auth/react',
     ],
   },
-  // Performance hints
   server: {
-    hmr: {
-      port: 24678,
-      clientPort: 24678
-    }
+    hmr: false,
+    proxy: {
+      "/__convex": {
+        target: "http://127.0.0.1:3210",
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/__convex/, ""),
+      },
+    },
   },
 });

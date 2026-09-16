@@ -22,11 +22,12 @@ function getFirstDayOfWeekJalali(jy: number, jm: number): number {
   return (d.getDay() + 1) % 7;
 }
 
-/** Jalali date string "1403-05-15" → formatted "۱۵ مرداد ۱۴۰۳" */
+/** Jalali date string (1403/05/15 or 1403-05-15) → formatted "۱۵ مرداد ۱۴۰۳" */
 function formatDisplay(dateStr: string): string {
-  const parts = dateStr.split("-").map(Number);
+  // Support both / and - separators
+  const parts = dateStr.split(/[\/\-]/).map(Number);
   if (parts.length < 3 || parts.some(isNaN)) return "";
-  return `${parts[2]} ${MONTH_NAMES_FA[parts[1]]} ${parts[0]}`;
+  return `${parts[2]} ${MONTH_NAMES_FA[parts[1] - 1] || ""} ${parts[0]}`;
 }
 
 export function JalaliDatePicker({ value, onChange, label, placeholder, className, disabled }: JalaliDatePickerProps) {

@@ -59,6 +59,20 @@ const AdminComparePage = lazy(() => import("./modules/products/pages/AdminCompar
 const AdminBlogPage = lazy(() => import("./modules/blog/pages/AdminBlogPage"));
 const BlogFormPage = lazy(() => import("./modules/blog/pages/BlogFormPage"));
 const BannerListPage = lazy(() => import("./modules/banners/pages/BannerListPage"));
+const ReturnListPage = lazy(() => import("./modules/returns/pages/ReturnListPage"));
+const VendorListPage = lazy(() => import("./modules/vendors/pages/VendorListPage"));
+const ActivityLogPage = lazy(() => import("./modules/logs/pages/ActivityLogPage"));
+const InventoryPage = lazy(() => import("./modules/inventory/pages/InventoryPage"));
+const WarehouseListPage = lazy(() => import("./modules/inventory/pages/WarehouseListPage"));
+const InventoryMovementsPage = lazy(() => import("./modules/inventory/pages/InventoryMovementsPage"));
+const ReviewListPage = lazy(() => import("./modules/reviews/pages/ReviewListPage"));
+const QAListPage = lazy(() => import("./modules/questions/pages/QAListPage"));
+const WishlistAdminPage = lazy(() => import("./modules/wishlists/pages/WishlistAdminPage"));
+const PageStatsPage = lazy(() => import("./modules/stats/pages/PageStatsPage"));
+const VariantListPage = lazy(() => import("./modules/variants/pages/VariantListPage"));
+const WalletListPage = lazy(() => import("./modules/wallets/pages/WalletListPage"));
+const EmailTemplateListPage = lazy(() => import("./modules/emailTemplates/pages/EmailTemplateListPage"));
+const NewslettersPage = lazy(() => import("./modules/newsletters/pages/NewslettersPage"));
 
 function RouteLoading() {
   return (
@@ -79,10 +93,12 @@ function LazyRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-const convexUrl = (import.meta.env.VITE_CONVEX_URL as string) || "https://zany-shrimp-635.convex.cloud";
-if (!import.meta.env.VITE_CONVEX_URL) {
-  console.warn("VITE_CONVEX_URL is missing. Please run `npx convex dev` to set it up. Using fallback for now.");
-}
+// Route Convex requests through Vite proxy so the browser can reach the local
+// Convex dev server (127.0.0.1:3210) even when the browser is remote.
+const rawUrl = (import.meta.env.VITE_CONVEX_URL as string) || "";
+const convexUrl = rawUrl.includes("127.0.0.1") || rawUrl.includes("localhost")
+  ? `${window.location.origin}/__convex`
+  : rawUrl || `${window.location.origin}/__convex`;
 const convex = new ConvexReactClient(convexUrl);
 
 loadSavedTheme();
@@ -151,6 +167,20 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="blog/new" element={<LazyRoute><BlogFormPage /></LazyRoute>} />
                 <Route path="blog/edit/:slug" element={<LazyRoute><BlogFormPage /></LazyRoute>} />
                 <Route path="banners" element={<LazyRoute><BannerListPage /></LazyRoute>} />
+                <Route path="returns" element={<LazyRoute><ReturnListPage /></LazyRoute>} />
+                <Route path="vendors" element={<LazyRoute><VendorListPage /></LazyRoute>} />
+                <Route path="inventory" element={<LazyRoute><InventoryPage /></LazyRoute>} />
+                <Route path="warehouses" element={<LazyRoute><WarehouseListPage /></LazyRoute>} />
+                <Route path="inventory-movements" element={<LazyRoute><InventoryMovementsPage /></LazyRoute>} />
+                <Route path="logs" element={<LazyRoute><ActivityLogPage /></LazyRoute>} />
+                <Route path="reviews" element={<LazyRoute><ReviewListPage /></LazyRoute>} />
+                <Route path="questions" element={<LazyRoute><QAListPage /></LazyRoute>} />
+                <Route path="wishlists-admin" element={<LazyRoute><WishlistAdminPage /></LazyRoute>} />
+                <Route path="page-stats" element={<LazyRoute><PageStatsPage /></LazyRoute>} />
+                <Route path="variants" element={<LazyRoute><VariantListPage /></LazyRoute>} />
+                <Route path="wallets" element={<LazyRoute><WalletListPage /></LazyRoute>} />
+                <Route path="email-templates" element={<LazyRoute><EmailTemplateListPage /></LazyRoute>} />
+                <Route path="newsletters" element={<LazyRoute><NewslettersPage /></LazyRoute>} />
               </Route>
               <Route path="*" element={<LazyRoute><NotFound /></LazyRoute>} />
             </Routes>

@@ -58,3 +58,21 @@ export const answer = mutation({
     await ctx.db.patch(args.questionId, { answers, status: "answered" });
   },
 });
+
+/** Admin: list all questions */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("questions").order("desc").collect();
+  },
+});
+
+/** Admin: remove a question */
+export const remove = mutation({
+  args: { questionId: v.id("questions") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    await ctx.db.delete(args.questionId);
+  },
+});

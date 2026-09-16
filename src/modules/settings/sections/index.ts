@@ -1,4 +1,4 @@
-import { Settings, Globe, Share2, Palette, Type, CreditCard, Truck, Hash, Mail, Phone, Bell, Shield, Lock, Key, Database, FileText, Languages, HelpCircle, MessageSquare, Images, Layout, Newspaper, Menu } from "lucide-react";
+import { Settings, Globe, Share2, Palette, Type, CreditCard, Truck, Hash, Mail, Phone, Bell, Shield, Lock, Key, Database, FileText, Languages, HelpCircle, MessageSquare, Images, Layout, Newspaper, Menu, Brush, Search } from "lucide-react";
 import { lazy, ComponentType } from "react";
 
 /**
@@ -40,6 +40,8 @@ const FooterContentSection = lazy(() => import("./FooterContentSection"));
 const AboutContactSection = lazy(() => import("./AboutContactSection"));
 const ProductSectionsSection = lazy(() => import("./ProductSectionsSection").then((m) => ({ default: m.ProductSectionsSection })));
 const LandingNavSection = lazy(() => import("./LandingNavSection"));
+const ProductCustomizationSection = lazy(() => import("./ProductCustomizationSection"));
+const SeoAdvancedSection = lazy(() => import("./SeoAdvancedSection"));
 
 export const SECTION_GROUPS = [
   { label: "عمومی", items: ["general", "seo", "social"] },
@@ -47,8 +49,10 @@ export const SECTION_GROUPS = [
   { label: "محتوا", items: ["content", "hero", "landing", "landingnav", "productsections", "footer", "about", "translations"] },
   { label: "فروش", items: ["payment", "shipping", "tax"] },
   { label: "ارتباطات", items: ["email", "sms", "notifications"] },
+  { label: "سئو", items: ["seoadvanced"] },
   { label: "امنیت", items: ["captcha", "lockscreen", "license"] },
   { label: "چت", items: ["chattheme", "chatfaq"] },
+  { label: "محصول", items: ["productcustom"] },
   { label: "ابزار", items: ["seed"] },
 ];
 
@@ -76,6 +80,8 @@ export const SECTIONS: SectionConfig[] = [
   { id: "footer", label: "فوتر و تماس", desc: "اطلاعات تماس و لینک‌های فوتر", icon: Newspaper, component: FooterContentSection },
   { id: "about", label: "درباره و تماس", desc: "محتوای صفحات درباره و تماس", icon: Shield, component: AboutContactSection },
   { id: "translations", label: "ترجمه‌ها (چندزبانه)", desc: "ویرایش ترجمه‌های فارسی/انگلیسی", icon: Languages, component: TranslationsSection },
+  { id: "productcustom", label: "سفارشی‌سازی محصول", desc: "رنگ، سایز، حکاکی و گزینه‌ها", icon: Brush, component: ProductCustomizationSection },
+  { id: "seoadvanced", label: "سئوی پیشرفته", desc: "sitemap، OG Tags، Robots", icon: Search, component: SeoAdvancedSection },
   { id: "chattheme", label: "ظاهر چت زنده", desc: "رنگ و ظاهر ویجت چت", icon: MessageSquare, component: ChatThemeSection },
   { id: "chatfaq", label: "سؤالات متداول چت", desc: "FAQ برای چت زنده", icon: HelpCircle, component: ChatFaqSection },
 ];

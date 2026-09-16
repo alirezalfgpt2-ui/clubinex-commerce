@@ -188,7 +188,10 @@ project/
 │   │   ├── loyalty/            # امتیازات وفاداری
 │   │   ├── bookings/           # رزرو/نوبت‌دهی
 │   │   ├── templates/          # قالب‌های ایمیل
-│   │   └── notifications/      # اعلانات
+│   │   ├── notifications/      # اعلانات
+│   │   ├── returns/            # مرجوعی کالا (RMA)
+│   │   ├── vendors/            # فروشندگان (مارکت‌پلیس)
+│   │   └── logs/               # لاگ فعالیت‌ها
 │   │
 │   ├── pages/                  # 📄 صفحات عمومی (غیر پنل)
 │   │   ├── Landing.tsx         # صفحه اصلی
@@ -236,7 +239,10 @@ project/
 │   ├── autoNotifications.ts    # نوتیفیکیشن خودکار
 │   ├── smsNotifications.ts     # ارسال پیامک
 │   ├── rateLimit.ts            # محدودیت نرخ درخواست
-│   └── activityLogs.ts         # لاگ فعالیت
+│   ├── activityLogs.ts         # لاگ فعالیت
+│   ├── returnRequests.ts       # مرجوعی کالا (RMA)
+│   ├── vendors.ts              # فروشندگان
+│   └── variants.ts             # متغیرهای محصول
 │
 ├── public/                     # 📁 فایل‌های استاتیک
 │   ├── logo.svg

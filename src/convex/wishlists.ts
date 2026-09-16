@@ -94,3 +94,11 @@ export const remove = mutation({
     if (existing) await ctx.db.delete(existing._id);
   },
 });
+
+/** Admin: list all wishlists */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("wishlists").order("desc").collect();
+  },
+});

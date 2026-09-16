@@ -164,16 +164,24 @@ export default function ComparePage() {
                   ))}
                 </tr>
                 {/* Feature Rows */}
-                {allFeatureKeys.map(([key, label]) => (
-                  <tr key={key} className="border-b border-gray-50">
-                    <td className="p-4 text-xs font-semibold text-gray-500">{label}</td>
-                    {selectedProducts.map((p: any) => (
-                      <td key={p._id} className="p-4 text-center text-xs text-gray-700">
-                        {(p.features as any)?.[key] || "—"}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {allFeatureKeys.map(([key, label]) => {
+                  const values = selectedProducts.map((p: any) => String((p.features as any)?.[key] || ""));
+                  const allSame = values.every((v) => v === values[0]);
+                  return (
+                    <tr key={key} className="border-b border-gray-50">
+                      <td className="p-4 text-xs font-semibold text-gray-500">{label}</td>
+                      {selectedProducts.map((p: any, idx: number) => {
+                        const val = (p.features as any)?.[key] || "—";
+                        const isDifferent = !allSame && val !== "—";
+                        return (
+                          <td key={p._id} className={`p-4 text-center text-xs ${isDifferent ? "text-primary font-bold bg-primary/5" : "text-gray-700"}`}>
+                            {val}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
                 {/* Action Row */}
                 <tr>
                   <td className="p-4"></td>

@@ -1,9 +1,10 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { JalaliDatePicker } from "@/modules/shared/ui/JalaliDatePicker";
-import { jalaliToIso } from "@/lib/jalali";
+import { jalaliToIso } from "@/lib/jalali"
 import { Search, Plus, Trash2, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from "lucide-react";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { formatJalaliDate } from "@/lib/jalali";
@@ -198,7 +199,7 @@ export default function DiscountListPage() {
 
       {/* Create Form */}
       {showForm && (
-        <div className="clay-card p-6 space-y-4 relative z-10">
+        <div className="clay-card p-6 space-y-4 relative z-20">
           <h3 className="font-bold text-sm">ایجاد تخفیف جدید</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex gap-2">
@@ -208,13 +209,14 @@ export default function DiscountListPage() {
             <select value={type} onChange={(e) => setType(e.target.value as any)} className="clay-input p-3 text-sm outline-none">
               <option value="percentage">درصدی (%)</option>
               <option value="fixed">مبلغ ثابت (تومان)</option>
+              <option value="gift_card">🎁 کارت هدیه</option>
             </select>
             <input type="number" value={value || ""} onChange={(e) => setValue(Number(e.target.value))} placeholder="مقدار تخفیف" className="clay-input p-3 text-sm outline-none" />
             <input type="number" value={minOrder || ""} onChange={(e) => setMinOrder(Number(e.target.value))} placeholder="حداقل مبلغ سفارش (تومان)" className="clay-input p-3 text-sm outline-none" />
             <input type="number" value={usageLimit || ""} onChange={(e) => setUsageLimit(Number(e.target.value))} placeholder="حداکثر استفاده (اختیاری)" className="clay-input p-3 text-sm outline-none" />
 
             {/* Product selector */}
-            <div className="relative z-30">
+            <div className="relative">
               <label className="text-xs text-muted-foreground mb-1 block">محصول (اختیاری)</label>
               <input
                 value={productSearch || (selectedProductId ? getProductName(selectedProductId) : "")}
@@ -223,8 +225,8 @@ export default function DiscountListPage() {
                 placeholder="انتخاب محصول..."
                 className="clay-input p-3 text-sm outline-none w-full"
               />
-              {productSearch && filteredProducts.length > 0 && !selectedProductId && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
+              {productSearch && filteredProducts.length > 0 && !selectedProductId && createPortal(
+                <div className="fixed top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto" style={{ zIndex: 99999 }}>
                   <button
                     onClick={() => { setSelectedProductId(""); setProductSearch(""); }}
                     className="w-full px-3 py-2 text-xs text-muted-foreground hover:bg-muted text-right"
@@ -240,12 +242,13 @@ export default function DiscountListPage() {
                       {p.name} — {p.price?.toLocaleString("fa-IR")} تومان
                     </button>
                   ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
             {/* Category selector */}
-            <div className="relative z-30">
+            <div className="relative">
               <label className="text-xs text-muted-foreground mb-1 block">دسته‌بندی (اختیاری)</label>
               <input
                 value={categorySearch || (selectedCategoryId ? getCategoryName(selectedCategoryId) : "")}
@@ -254,8 +257,8 @@ export default function DiscountListPage() {
                 placeholder="انتخاب دسته‌بندی..."
                 className="clay-input p-3 text-sm outline-none w-full"
               />
-              {categorySearch && filteredCategories.length > 0 && !selectedCategoryId && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl max-h-48 overflow-y-auto z-50">
+              {categorySearch && filteredCategories.length > 0 && !selectedCategoryId && createPortal(
+                <div className="fixed top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto" style={{ zIndex: 99999 }}>
                   <button
                     onClick={() => { setSelectedCategoryId(""); setCategorySearch(""); }}
                     className="w-full px-3 py-2 text-xs text-muted-foreground hover:bg-muted text-right"
@@ -271,15 +274,16 @@ export default function DiscountListPage() {
                       {c.name}
                     </button>
                   ))}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
             {/* Date pickers */}
-            <div className="relative z-30">
+            <div className="relative">
               <JalaliDatePicker label="تاریخ شروع" value={startDate} onChange={setStartDate} />
             </div>
-            <div className="relative z-30">
+            <div className="relative">
               <JalaliDatePicker label="تاریخ پایان" value={endDate} onChange={setEndDate} />
             </div>
           </div>
@@ -361,7 +365,7 @@ export default function DiscountListPage() {
                 <tr key={d._id} className="border-b hover:bg-muted/30 transition-colors">
                   <td className="p-3 font-mono text-xs font-medium">{d.code}</td>
                   <td className="p-3 text-xs">
-                    <div>{d.type === "percentage" ? "درصدی" : "مبلغ ثابت"}</div>
+                    <div>{d.type === "percentage" ? "درصدی" : d.type === "gift_card" ? "🎁 کارت هدیه" : "مبلغ ثابت"}</div>
                     {d.discountType && d.discountType !== "general" && (
                       <div className="text-[9px] text-muted-foreground mt-0.5">
                         {d.discountType === "welcome" ? "🎉 خوش‌آمد" : d.discountType === "birthday" ? "🎂 تولد" : d.discountType === "loyalty" ? "⭐ وفاداری" : "📦 حجمی"}

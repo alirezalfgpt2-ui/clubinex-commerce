@@ -383,3 +383,56 @@ export const getStats = query({
     return { totalRevenue, pendingOrders, deliveredOrders, totalOrders };
   },
 });
+
+/** آمار مالی کامل — درآمد، مالیات، ارسال، تخفیف، بازپرداخت */
+export const getFinancialStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const orders = await ctx.db.query("orders").collect();
+    const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
+    const refundedOrders = orders.filter((o) => o.paymentStatus === "refunded");
+    const cancelledOrders = orders.filter((o) => o.status === "cancelled");
+
+    const totalRevenue = paidOrders.reduce((s, o) => s + o.total, 0);
+    const totalTax = paidOrders.reduce((s, o) => s + (o.tax || 0), 0);
+    const totalShipping = paidOrders.reduce((s, o) => s + (o.shippingCost || 0), 0);
+    const totalDiscount = paidOrders.reduce((s, o) => s + (o.discount || 0), 0);
+    const totalRefunds = refundedOrders.reduce((s, o) => s + o.total, 0);
+    const totalSubtotal = paidOrders.reduce((s, o) => s + (o.subtotal || 0), 0);
+
+    // درآمد روزانه — ۷ روز اخیر
+    const now = Date.now();
+    const dailyRevenue: { date: string; amount: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = now - (i + 1) * 86400000;
+      const dayEnd = now - i * 86400000;
+      const dayLabel = new Date(dayEnd).toLocaleDateString("fa-IR", { weekday: "short" });
+      const dayAmount = paidOrders
+        .filter((o) => o.createdAt >= dayStart && o.createdAt < dayEnd)
+        .reduce((s, o) => s + o.total, 0);
+      dailyRevenue.push({ date: dayLabel, amount: dayAmount });
+    }
+
+    // وضعیت سفارشات
+    const statusBreakdown = [
+      { label: "در انتظار", count: orders.filter((o) => o.status === "pending").length, color: "bg-amber-500" },
+      { label: "پرداخت شده", count: orders.filter((o) => o.status === "paid").length, color: "bg-sky-500" },
+      { label: "در حال پردازش", count: orders.filter((o) => o.status === "processing").length, color: "bg-indigo-500" },
+      { label: "ارسال شده", count: orders.filter((o) => o.status === "shipped").length, color: "bg-purple-500" },
+      { label: "تحویل شده", count: orders.filter((o) => o.status === "delivered").length, color: "bg-emerald-500" },
+      { label: "لغو شده", count: cancelledOrders.length, color: "bg-rose-500" },
+    ];
+
+    // میانگین ارزش سفارش
+    const avgOrderValue = paidOrders.length > 0 ? Math.round(totalRevenue / paidOrders.length) : 0;
+
+    // نرخ بازپرداخت
+    const refundRate = orders.length > 0 ? Math.round((refundedOrders.length / orders.length) * 100) : 0;
+
+    return {
+      totalRevenue, totalSubtotal, totalTax, totalShipping, totalDiscount, totalRefunds,
+      dailyRevenue, statusBreakdown, avgOrderValue, refundRate,
+      paidCount: paidOrders.length, refundedCount: refundedOrders.length, cancelledCount: cancelledOrders.length,
+    };
+  },
+});

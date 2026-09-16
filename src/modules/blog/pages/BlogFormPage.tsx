@@ -19,6 +19,8 @@ export default function BlogFormPage() {
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [tags, setTags] = useState<string[]>([]);
   const [image, setImage] = useState("");
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -62,15 +64,6 @@ export default function BlogFormPage() {
 
   return (
     <div className="w-full max-w-3xl space-y-5 pb-10">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/dashboard" className="hover:text-primary transition-colors">داشبورد</Link>
-        <span className="text-muted-foreground/40">/</span>
-        <Link to="/dashboard/blog" className="hover:text-primary transition-colors">وبلاگ</Link>
-        <span className="text-muted-foreground/40">/</span>
-        <span className="text-foreground font-medium">{isEdit ? "ویرایش مقاله" : "مقاله جدید"}</span>
-      </nav>
-
       <h1 className="text-2xl font-bold tracking-tight">
         {isEdit ? "ویرایش مقاله" : "افزودن مقاله جدید"}
       </h1>
@@ -168,6 +161,31 @@ export default function BlogFormPage() {
             <span className="text-xs">تصویری انتخاب نشده</span>
           </div>
         )}
+
+        {/* ── سئو ── */}
+        <SectionTitle title="تنظیمات سئو (SEO)" />
+        <div className="space-y-3">
+          <Field label="عنوان متا (Meta Title)" hint="عنوانی که در نتایج جستجو نمایش داده می‌شود">
+            <input
+              value={seoTitle}
+              onChange={(e) => setSeoTitle(e.target.value)}
+              className="clay-input w-full p-3 text-sm outline-none"
+              placeholder={title || "عنوان سئو..."}
+              maxLength={60}
+            />
+            <span className="text-[10px] text-muted-foreground mt-1 block">{(seoTitle || title).length}/60 کاراکتر</span>
+          </Field>
+          <Field label="توضیحات متا (Meta Description)" hint="توضیحی که در زیر عنوان در نتایج جستجو نمایش داده می‌شود">
+            <textarea
+              value={seoDescription}
+              onChange={(e) => setSeoDescription(e.target.value)}
+              className="clay-input w-full p-3 text-sm outline-none min-h-[60px]"
+              placeholder={excerpt || "توضیحات سئو..."}
+              maxLength={160}
+            />
+            <span className="text-[10px] text-muted-foreground mt-1 block">{(seoDescription || excerpt).length}/160 کاراکتر</span>
+          </Field>
+        </div>
 
         {/* ── تنظیمات نمایش ── */}
         <SectionTitle title="تنظیمات نمایش" />

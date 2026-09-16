@@ -17,9 +17,9 @@ export const listAll = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return [];
     const user = await ctx.db.get(userId);
-    if (user?.role !== "admin" && user?.role !== "manager") throw new Error("Unauthorized");
+    if (user?.role !== "admin" && user?.role !== "manager") return [];
     return await ctx.db.query("banners").order("desc").collect();
   },
 });

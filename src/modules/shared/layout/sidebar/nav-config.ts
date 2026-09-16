@@ -3,7 +3,8 @@ import {
   ShoppingCart, ShoppingBag, CreditCard, Gift, Truck, CalendarDays,
   Users, MessageSquare, Bell, BarChart3, Newspaper, Shield, FileText,
   User, Settings, Building2, Headphones, Globe, DollarSign, Zap, Heart,
-  Star, Briefcase,
+  Star, Briefcase, RotateCcw, Store, Warehouse, Boxes, ClipboardList,
+  MessageCircle, HelpCircle, Palette, Wallet, Eye, Bookmark, Mail, Send,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -13,7 +14,8 @@ export const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   ShoppingCart, ShoppingBag, CreditCard, Gift, Truck, CalendarDays,
   Users, MessageSquare, Bell, BarChart3, Newspaper, Shield, FileText,
   User, Settings, Building2, Headphones, Globe, DollarSign, Zap, Heart,
-  Star, Briefcase,
+  Star, Briefcase, RotateCcw, Store, Warehouse, Boxes, ClipboardList,
+  MessageCircle, HelpCircle, Palette, Wallet, Eye, Bookmark, Mail, Send,
 };
 
 export interface SidebarItem {
@@ -71,12 +73,55 @@ export const NAV_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    id: "engagement",
+    label: "تعاملات کاربری",
+    items: [
+      { to: "/dashboard/reviews", icon: "MessageCircle", label: "نظرات و امتیازات" },
+      { to: "/dashboard/questions", icon: "HelpCircle", label: "پرسش و پاسخ" },
+      { to: "/dashboard/wishlists-admin", icon: "Heart", label: "علاقه‌مندی‌ها" },
+      { to: "/dashboard/page-stats", icon: "Eye", label: "آمار بازدید" },
+    ],
+  },
+  {
+    id: "variants",
+    label: "متغیرهای محصول",
+    items: [
+      { to: "/dashboard/variants", icon: "Palette", label: "مدیریت متغیرها" },
+      { to: "/dashboard/wallets", icon: "Wallet", label: "کیف پول و وفاداری" },
+    ],
+  },
+  {
     id: "reports",
     label: "گزارش‌ها",
     items: [
       { to: "/dashboard/reports", icon: "BarChart3", label: "گزارش‌ها و تحلیل" },
       { to: "/dashboard/logs", icon: "FileText", label: "لاگ فعالیت‌ها" },
       { to: "/dashboard/blog", icon: "Newspaper", label: "بلاگ و اخبار" },
+    ],
+  },
+  {
+    id: "inventory",
+    label: "انبارداری",
+    items: [
+      { to: "/dashboard/inventory", icon: "Boxes", label: "موجودی انبار" },
+      { to: "/dashboard/warehouses", icon: "Warehouse", label: "انبارها" },
+      { to: "/dashboard/inventory-movements", icon: "ClipboardList", label: "گردش موجودی" },
+    ],
+  },
+  {
+    id: "after_sales",
+    label: "خدمات پس از فروش",
+    items: [
+      { to: "/dashboard/returns", icon: "RotateCcw", label: "مرجوعی کالا" },
+      { to: "/dashboard/vendors", icon: "Store", label: "فروشندگان" },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "بازاریابی",
+    items: [
+      { to: "/dashboard/email-templates", icon: "Mail", label: "قالب‌های ایمیل" },
+      { to: "/dashboard/newsletters", icon: "Send", label: "خبرنامه" },
     ],
   },
   {

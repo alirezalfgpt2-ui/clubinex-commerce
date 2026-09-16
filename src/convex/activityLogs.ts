@@ -65,6 +65,14 @@ export const list = query({
   },
 });
 
+/** لیست لاگ‌ها (Admin) */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("auditLogs").order("desc").take(500);
+  },
+});
+
 /** آمار لاگ‌ها */
 export const getStats = query({
   args: {},

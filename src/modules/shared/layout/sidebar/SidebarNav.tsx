@@ -14,11 +14,7 @@ export function SidebarNav({ groups, expandedGroups, onToggleGroup }: SidebarNav
 
   return (
     <nav
-      className="flex-1 overflow-y-auto py-2 px-2"
-      style={{
-        scrollbarWidth: "thin",
-        scrollbarColor: "var(--sb-scrollbar) var(--sb-scroll-bg)",
-      }}
+      className="flex-1 overflow-y-auto py-2 px-2 sidebar-scroll"
     >
       {groups.map((group) => {
         const isExpanded = expandedGroups[group.id] !== false;

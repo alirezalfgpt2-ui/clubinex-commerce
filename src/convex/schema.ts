@@ -53,6 +53,7 @@ const schema = defineSchema(
         label: v.string(),
         desc: v.string(),
       }))),
+      vendorId: v.optional(v.id("vendors")),
       isFeatured: v.boolean(),
       isActive: v.boolean(),
       views: v.number(),
@@ -461,6 +462,7 @@ const schema = defineSchema(
 
     newsletters: defineTable({
       email: v.string(),
+      name: v.optional(v.string()),
       isActive: v.boolean(),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
@@ -509,6 +511,97 @@ const schema = defineSchema(
     })
       .index("by_chatId", ["chatId"])
       .index("by_sessionId", ["sessionId"]),
+
+    returnRequests: defineTable({
+      orderId: v.id("orders"),
+      userId: v.id("users"),
+      productId: v.id("products"),
+      reason: v.string(),
+      images: v.array(v.string()),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("rejected"),
+        v.literal("refunded"),
+      ),
+      adminNote: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_order", ["orderId"])
+      .index("by_status", ["status"]),
+
+    vendors: defineTable({
+      userId: v.id("users"),
+      storeName: v.string(),
+      contactName: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      address: v.optional(v.string()),
+      commissionRate: v.number(),
+      status: v.union(
+        v.literal("active"),
+        v.literal("suspended"),
+        v.literal("pending"),
+      ),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_user", ["userId"])
+      .index("by_status", ["status"]),
+
+    inventory: defineTable({
+      productId: v.id("products"),
+      variantId: v.optional(v.id("productVariants")),
+      warehouseId: v.optional(v.id("warehouses")),
+      quantity: v.number(),
+      reservedQuantity: v.optional(v.number()),
+      minStock: v.optional(v.number()),
+      maxStock: v.optional(v.number()),
+      unit: v.optional(v.string()),
+      updatedAt: v.number(),
+    })
+      .index("by_product", ["productId"])
+      .index("by_warehouse", ["warehouseId"])
+      .index("by_product_warehouse", ["productId", "warehouseId"]),
+
+    inventoryMovements: defineTable({
+      productId: v.id("products"),
+      variantId: v.optional(v.id("productVariants")),
+      warehouseId: v.optional(v.id("warehouses")),
+      type: v.union(
+        v.literal("in"),
+        v.literal("out"),
+        v.literal("purchase"),
+        v.literal("sale"),
+        v.literal("return"),
+        v.literal("adjustment"),
+        v.literal("transfer"),
+      ),
+      quantity: v.number(),
+      referenceId: v.optional(v.string()),
+      referenceType: v.optional(v.string()),
+      note: v.optional(v.string()),
+      userId: v.id("users"),
+      createdAt: v.number(),
+    })
+      .index("by_product", ["productId"])
+      .index("by_warehouse", ["warehouseId"])
+      .index("by_type", ["type"])
+      .index("by_createdAt", ["createdAt"]),
+
+    warehouses: defineTable({
+      name: v.string(),
+      code: v.string(),
+      address: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      managerId: v.optional(v.id("users")),
+      isActive: v.boolean(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_code", ["code"])
+      .index("by_isActive", ["isActive"]),
 
     licenses: defineTable({
       key: v.string(),

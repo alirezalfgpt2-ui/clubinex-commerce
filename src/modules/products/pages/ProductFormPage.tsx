@@ -8,7 +8,7 @@
  */
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { toast } from "sonner";
 import { Save, ArrowRight, Send, EyeOff, Copy, Sparkles } from "lucide-react";
@@ -150,7 +150,7 @@ export default function ProductFormPage() {
               <SearchableSelect options={categoryOptions} value={categoryId} onChange={setCategoryId} placeholder="انتخاب دسته‌بندی" searchPlaceholder="جستجو..." />
             </Field>
             <Field label="برند / سازنده">
-              <input value={brand} onChange={(e) => setBrand(e.target.value)} className="clay-input w-full p-3 text-sm outline-none" placeholder="نام برند (اختیاری)" />
+              <BrandSelect value={brand} onChange={setBrand} />
             </Field>
           </div>
 
@@ -276,6 +276,53 @@ function Field({ label, required, hint, children }: { label: string; required?: 
       </label>
       {children}
       {hint && <p className="text-[10px] text-muted-foreground/60 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function BrandSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const brands = useQuery(api.brands.listActive);
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const options = (brands || []).filter((b: any) => b.isActive !== false);
+  const filtered = search.trim()
+    ? options.filter((b: any) => b.name.toLowerCase().includes(search.toLowerCase()))
+    : options;
+  const selectedLabel = options.find((b: any) => b.name === value)?.name || "";
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" onClick={() => setOpen(!open)} className="clay-input w-full p-3 text-sm text-right flex items-center justify-between">
+        <span className={value ? "text-foreground" : "text-muted-foreground"}>{selectedLabel || "انتخاب برند (اختیاری)"}</span>
+        <div className="flex items-center gap-2">
+          {value && <span onClick={(e) => { e.stopPropagation(); onChange(""); setOpen(false); }} className="text-muted-foreground hover:text-foreground cursor-pointer text-xs">✕</span>}
+        </div>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="جستجوی برند..." className="w-full h-8 rounded-lg bg-gray-50 dark:bg-gray-800 border-0 px-3 text-xs outline-none" autoFocus />
+          </div>
+          <div className="overflow-y-auto max-h-48 py-1">
+            <button type="button" onClick={() => { onChange(""); setOpen(false); setSearch(""); }} className="w-full text-right px-3 py-2 text-xs text-muted-foreground hover:bg-muted transition-colors">بدون برند</button>
+            {filtered.map((b: any) => (
+              <button key={b._id} type="button" onClick={() => { onChange(b.name); setOpen(false); setSearch(""); }} className={`w-full text-right px-3 py-2 text-sm hover:bg-primary/5 transition-colors ${value === b.name ? "bg-primary/10 text-primary font-semibold" : ""}`}>{b.name}</button>
+            ))}
+            {filtered.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground text-center">برندی یافت نشد</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

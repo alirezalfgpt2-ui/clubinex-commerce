@@ -13,6 +13,7 @@ import type * as audit from "../audit.js";
 import type * as auth from "../auth.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as autoNotifications from "../autoNotifications.js";
+import type * as banners from "../banners.js";
 import type * as bookings from "../bookings.js";
 import type * as brands from "../brands.js";
 import type * as cart from "../cart.js";
@@ -22,6 +23,7 @@ import type * as discounts from "../discounts.js";
 import type * as emailTemplates from "../emailTemplates.js";
 import type * as giftCards from "../giftCards.js";
 import type * as http from "../http.js";
+import type * as inventory from "../inventory.js";
 import type * as loyaltyPoints from "../loyaltyPoints.js";
 import type * as messages from "../messages.js";
 import type * as newsletters from "../newsletters.js";
@@ -29,7 +31,9 @@ import type * as notifications from "../notifications.js";
 import type * as orders from "../orders.js";
 import type * as payment from "../payment.js";
 import type * as products from "../products.js";
+import type * as questions from "../questions.js";
 import type * as rateLimit from "../rateLimit.js";
+import type * as returnRequests from "../returnRequests.js";
 import type * as reviews from "../reviews.js";
 import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
@@ -38,6 +42,10 @@ import type * as shipping from "../shipping.js";
 import type * as smsNotifications from "../smsNotifications.js";
 import type * as tickets from "../tickets.js";
 import type * as users from "../users.js";
+import type * as variants from "../variants.js";
+import type * as vendors from "../vendors.js";
+import type * as wallets from "../wallets.js";
+import type * as warehouses from "../warehouses.js";
 import type * as wishlists from "../wishlists.js";
 
 import type {
@@ -52,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "auth/emailOtp": typeof auth_emailOtp;
   autoNotifications: typeof autoNotifications;
+  banners: typeof banners;
   bookings: typeof bookings;
   brands: typeof brands;
   cart: typeof cart;
@@ -61,6 +70,7 @@ declare const fullApi: ApiFromModules<{
   emailTemplates: typeof emailTemplates;
   giftCards: typeof giftCards;
   http: typeof http;
+  inventory: typeof inventory;
   loyaltyPoints: typeof loyaltyPoints;
   messages: typeof messages;
   newsletters: typeof newsletters;
@@ -68,7 +78,9 @@ declare const fullApi: ApiFromModules<{
   orders: typeof orders;
   payment: typeof payment;
   products: typeof products;
+  questions: typeof questions;
   rateLimit: typeof rateLimit;
+  returnRequests: typeof returnRequests;
   reviews: typeof reviews;
   roles: typeof roles;
   seed: typeof seed;
@@ -77,6 +89,10 @@ declare const fullApi: ApiFromModules<{
   smsNotifications: typeof smsNotifications;
   tickets: typeof tickets;
   users: typeof users;
+  variants: typeof variants;
+  vendors: typeof vendors;
+  wallets: typeof wallets;
+  warehouses: typeof warehouses;
   wishlists: typeof wishlists;
 }>;
 

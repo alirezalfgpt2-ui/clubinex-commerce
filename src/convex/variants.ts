@@ -76,3 +76,11 @@ export const remove = mutation({
     await ctx.db.delete(args.variantId);
   }
 });
+
+/** Admin: list all variants */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("productVariants").collect();
+  },
+});

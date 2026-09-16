@@ -862,6 +862,124 @@ giftCards: defineTable({
 
 ---
 
+## ۳۲. درخواست‌های مرجوعی (`returnRequests`)
+
+```typescript
+returnRequests: defineTable({
+  orderId:     v.id("orders"),              // 🔗 سفارش مرتبط
+  userId:      v.id("users"),               // 🔗 کاربر درخواست‌کننده
+  productId:   v.id("products"),            // 🔗 محصول مرجوعی
+  reason:      v.string(),                  // علت مرجوعی
+  images:      v.array(v.string()),         // تصاویر خرابی/مشکل
+  status:      v.union(                     // وضعیت
+    v.literal("pending"),                   // در انتظار بررسی
+    v.literal("approved"),                  // تایید شده
+    v.literal("rejected"),                  // رد شده
+    v.literal("refunded"),                  // بازپرداخت شده
+  ),
+  adminNote:   v.optional(v.string()),      // یادداشت ادمین
+  createdAt:   v.number(),
+  updatedAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_order`, `by_status`
+
+> **محدودیت:** فقط سفارشات تحویل شده تا ۷ روز پس از تحویل قابل مرجوعی هستند.
+
+---
+
+## ۳۳. فروشندگان (`vendors`)
+
+```typescript
+vendors: defineTable({
+  userId:          v.id("users"),              // 🔗 کاربر فروشنده
+  storeName:       v.string(),                 // نام فروشگاه
+  commissionRate:  v.number(),                 // نرخ کمیسیون (٪)
+  status:          v.union(                    // وضعیت
+    v.literal("active"),                       // فعال
+    v.literal("suspended"),                    // معلق
+    v.literal("pending"),                      // در انتظار تایید
+  ),
+  createdAt:       v.number(),
+  updatedAt:       v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_status`
+
+> 💡 **مارکت‌پلیس:** فروشندگان می‌توانند محصولات خود را ثبت کنند. فیلد `vendorId` در جدول `products` ارجاع به فروشنده است.
+
+---
+
+## ۳۴. صفحات بازدید (`pageViews`)
+
+```typescript
+pageViews: defineTable({
+  path:            v.string(),            // مسیر صفحه (مثلاً /products/laptop)
+  date:            v.string(),            // تاریخ (YYYY-MM-DD)
+  viewCount:       v.number(),            // تعداد بازدید
+  uniqueVisitors:  v.number(),            // تعداد بازدیدکنندگان یکتا
+})
+```
+
+**ایندکس‌ها:** `by_path`, `by_date`
+
+---
+
+## ۳۵. کیف پول (`wallets`)
+
+```typescript
+wallets: defineTable({
+  userId:   v.id("users"),        // 🔗 کاربر
+  balance:  v.number(),           // موجودی ریالی
+  points:   v.number(),           // امتیازات وفاداری
+})
+```
+
+**ایندکس‌ها:** `by_user`
+
+---
+
+## ۳۶. تراکنش‌های کیف پول (`walletTransactions`)
+
+```typescript
+walletTransactions: defineTable({
+  walletId:    v.id("wallets"),            // 🔗 کیف پول
+  amount:      v.number(),                 // مبلغ (مثبت=واریز، منفی=برداشت)
+  type:        v.union(                    // نوع تراکنش
+    v.literal("deposit"),                  // واریز
+    v.literal("withdrawal"),               // برداشت
+    v.literal("purchase"),                 // خرید
+    v.literal("reward"),                   // پاداش
+  ),
+  description: v.string(),                 // توضیحات
+  createdAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_wallet`
+
+---
+
+## ۳۷. متغیرهای محصول (`productVariants`)
+
+```typescript
+productVariants: defineTable({
+  productId:        v.id("products"),    // 🔗 محصول والد
+  type:             v.string(),          // نوع متغیر (مثلاً "color", "size")
+  value:            v.string(),          // مقدار (مثلاً "مشکی", "XL")
+  colorCode:        v.optional(v.string()), // کد رنگ (اختیاری)
+  priceAdjustment:  v.number(),          // تغییر قیمت نسبت به قیمت پایه
+  stock:            v.number(),          // موجودی این متغیر
+  sku:              v.optional(v.string()), // کد انبارداری اختصاصی
+})
+```
+
+**ایندکس‌ها:** `by_product`
+
+---
+
 ## نکات فنی مهم
 
 ### ۱. `v.any()` در فیلدها
@@ -882,6 +1000,6 @@ Convex تضمین می‌کند که مقدار این فیلدها یک شنا�
 
 ---
 
-> 📝 **تعداد کل جداول:** ۲۹+ جدول (شامل جداول Auth)
-> 📝 **تعداد کل ایندکس‌ها:** ۵۰+ ایندکس
-> 📝 **تعداد ارتباطات خارجی:** ۲۵+ ارتباط بین جداول
+> 📝 **تعداد کل جداول:** ۳۶+ جدول (شامل جداول Auth)
+> 📝 **تعداد کل ایندکس‌ها:** ۷۰+ ایندکس
+> 📝 **تعداد ارتباطات خارجی:** ۳۵+ ارتباط بین جداول

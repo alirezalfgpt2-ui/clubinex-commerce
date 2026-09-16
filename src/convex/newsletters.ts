@@ -42,3 +42,21 @@ export const list = query({
     return await ctx.db.query("newsletters").order("desc").collect();
   },
 });
+
+export const remove = mutation({
+  args: { id: v.id("newsletters") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+    return { success: true };
+  },
+});
+
+export const bulkRemove = mutation({
+  args: { ids: v.array(v.id("newsletters")) },
+  handler: async (ctx, args) => {
+    for (const id of args.ids) {
+      await ctx.db.delete(id);
+    }
+    return { success: true, removed: args.ids.length };
+  },
+});

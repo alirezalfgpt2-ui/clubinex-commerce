@@ -74,16 +74,18 @@ export default function UserListPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
   // ── عملیات ──
+  const isSuperAdmin = (u: any) => u.role === "admin" && (u.email === "admin@example.com");
+
   const handleRoleChange = async (userId: string, role: string) => {
     try { await updateRole({ userId: userId as any, role }); toast.success("نقش تغییر کرد."); }
-    catch { toast.error("خطا."); }
+    catch (e: any) { toast.error(e?.message || "خطا."); }
   };
 
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     const action = currentActive !== false ? "بلاک" : "فعال‌سازی";
     if (!await confirmDialog({ title: `${action} کاربر`, message: `آیا از ${action} این کاربر اطمینان دارید؟`, variant: currentActive !== false ? "danger" : "warning" })) return;
     try { await toggleActive({ userId: userId as any }); toast.success(`کاربر ${action} شد.`); }
-    catch { toast.error("خطا."); }
+    catch (e: any) { toast.error(e?.message || "خطا."); }
   };
 
   const handleEditSave = async () => {
@@ -168,14 +170,22 @@ export default function UserListPage() {
                     <td className="p-3 text-center text-xs" dir="ltr">{u.email || "—"}</td>
                     <td className="p-3 text-center text-xs" dir="ltr">{u.phone || "—"}</td>
                     <td className="p-3 text-center">
-                      <select value={u.role || "user"} onChange={(e) => handleRoleChange(u._id, e.target.value)} className="clay-input px-2 py-1 text-[10px] outline-none">
-                        {Object.entries(ROLE_MAP).map(([val, meta]) => <option key={val} value={val}>{meta.label}</option>)}
-                      </select>
+                      {isSuperAdmin(u) ? (
+                        <span className="text-[10px] px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">مدیر کل</span>
+                      ) : (
+                        <select value={u.role || "user"} onChange={(e) => handleRoleChange(u._id, e.target.value)} className="clay-input px-2 py-1 text-[10px] outline-none">
+                          {Object.entries(ROLE_MAP).map(([val, meta]) => <option key={val} value={val}>{meta.label}</option>)}
+                        </select>
+                      )}
                     </td>
                     <td className="p-3 text-center">
-                      <button onClick={() => handleToggleActive(u._id, u.isActive)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${u.isActive !== false ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-rose-100 text-rose-700 hover:bg-rose-200"}`}>
-                        {u.isActive !== false ? "فعال" : "بلاک"}
-                      </button>
+                      {isSuperAdmin(u) ? (
+                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">🛡️ محافظت شده</span>
+                      ) : (
+                        <button onClick={() => handleToggleActive(u._id, u.isActive)} className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition-all ${u.isActive !== false ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-rose-100 text-rose-700 hover:bg-rose-200"}`}>
+                          {u.isActive !== false ? "فعال" : "بلاک"}
+                        </button>
+                      )}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -255,8 +265,15 @@ export default function UserListPage() {
             {/* اقدامات */}
             <div className="flex gap-2">
               <button onClick={handleEditSave} className="clay-button px-4 py-2 text-sm font-semibold flex-1">ذخیره تغییرات</button>
-              <button onClick={() => { setResetUserId(editUser._id); setEditUser(null); }} className="clay-button px-4 py-2 text-sm bg-amber-50 text-amber-700">ریست رمز</button>
-              <button onClick={() => handleToggleActive(editUser._id, editUser.isActive)} className={`clay-button px-4 py-2 text-sm ${editUser.isActive !== false ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>{editUser.isActive !== false ? "بلاک" : "فعال‌سازی"}</button>
+              {!isSuperAdmin(editUser) && (
+                <button onClick={() => { setResetUserId(editUser._id); setEditUser(null); }} className="clay-button px-4 py-2 text-sm bg-amber-50 text-amber-700">ریست رمز</button>
+              )}
+              {!isSuperAdmin(editUser) && (
+                <button onClick={() => handleToggleActive(editUser._id, editUser.isActive)} className={`clay-button px-4 py-2 text-sm ${editUser.isActive !== false ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>{editUser.isActive !== false ? "بلاک" : "فعال‌سازی"}</button>
+              )}
+              {isSuperAdmin(editUser) && (
+                <span className="flex items-center gap-1 px-3 py-2 text-xs text-purple-600 bg-purple-50 rounded-lg">🛡️ ادمین اصلی — قابل تغییر نیست</span>
+              )}
               <button onClick={() => setEditUser(null)} className="clay-button px-4 py-2 text-sm bg-muted text-foreground">بستن</button>
             </div>
           </div>

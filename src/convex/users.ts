@@ -135,6 +135,12 @@ export const updateRole = mutation({
     if (!adminId) throw new Error("Not authenticated");
     const admin = await ctx.db.get(adminId);
     if (admin?.role !== "admin") throw new Error("Unauthorized");
+    const target = await ctx.db.get(args.userId);
+    if (!target) throw new Error("User not found");
+    // Protect super admin: cannot change role of the first admin or admin@example.com
+    if (target.role === "admin" && (target.email === "admin@example.com" || target._id === adminId)) {
+      throw new Error("cannot modify the super admin role");
+    }
     await ctx.db.patch(args.userId, { role: args.role, updatedAt: Date.now() });
   },
 });
@@ -148,6 +154,10 @@ export const toggleActive = mutation({
     if (admin?.role !== "admin") throw new Error("Unauthorized");
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
+    // Protect super admin: cannot deactivate the first admin or admin@example.com
+    if (user.role === "admin" && (user.email === "admin@example.com" || user._id === adminId)) {
+      throw new Error("cannot deactivate the super admin");
+    }
     await ctx.db.patch(args.userId, {
       isActive: user.isActive === false ? true : false,
       updatedAt: Date.now(),
@@ -213,6 +223,14 @@ export const adminUpdateUser = mutation({
     if (!adminId) throw new Error("Not authenticated");
     const admin = await ctx.db.get(adminId);
     if (admin?.role !== "admin") throw new Error("Unauthorized");
+    const target = await ctx.db.get(args.userId);
+    if (!target) throw new Error("User not found");
+    // Protect super admin from role change and deactivation
+    const isSuperAdmin = target.role === "admin" && (target.email === "admin@example.com" || target._id === adminId);
+    if (isSuperAdmin) {
+      if (args.role && args.role !== "admin") throw new Error("cannot change the super admin role");
+      if (args.isActive === false) throw new Error("cannot deactivate the super admin");
+    }
     const { userId, ...updates } = args;
     await ctx.db.patch(userId, { ...updates, updatedAt: Date.now() });
   },

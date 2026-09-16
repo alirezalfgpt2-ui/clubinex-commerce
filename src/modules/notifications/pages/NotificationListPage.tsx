@@ -1,8 +1,9 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState } from "react";
-import { Bell, Check, Trash2, Filter, Package, CreditCard, AlertTriangle, Settings, MessageSquare } from "lucide-react";
+import { Bell, Check, Trash2, Filter, Package, CreditCard, AlertTriangle, Settings, MessageSquare, TrendingDown, RefreshCw, Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useState as useStateReact } from "react";
 
 const TYPE_MAP: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   order: { label: "سفارش", icon: <Package className="h-4 w-4" />, color: "text-blue-500 bg-blue-50" },
@@ -11,14 +12,34 @@ const TYPE_MAP: Record<string, { label: string; icon: React.ReactNode; color: st
   system: { label: "سیستم", icon: <Settings className="h-4 w-4" />, color: "text-purple-500 bg-purple-50" },
   support: { label: "پشتیبانی", icon: <MessageSquare className="h-4 w-4" />, color: "text-indigo-500 bg-indigo-50" },
   inventory: { label: "موجودی", icon: <AlertTriangle className="h-4 w-4" />, color: "text-rose-500 bg-rose-50" },
+  price_drop: { label: "کاهش قیمت", icon: <TrendingDown className="h-4 w-4" />, color: "text-orange-500 bg-orange-50" },
+  restock: { label: "موجود شدن", icon: <RefreshCw className="h-4 w-4" />, color: "text-teal-500 bg-teal-50" },
 };
 
 export default function NotificationListPage() {
   const notifications = useQuery(api.notifications.list);
   const markAsRead = useMutation(api.notifications.markAsRead);
   const markAllAsRead = useMutation(api.notifications.markAllAsRead);
+  const runAllChecks = useMutation(api.autoNotifications.runAllChecks);
   const [filter, setFilter] = useState<string>("all");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [checking, setChecking] = useStateReact(false);
+
+  const handleRunChecks = async () => {
+    setChecking(true);
+    try {
+      const result = await runAllChecks();
+      if (result.totalNotifications > 0) {
+        toast.success(`${result.totalNotifications} اعلان جدید ایجاد شد.`);
+      } else {
+        toast.info("اعلان جدیدی یافت نشد.");
+      }
+    } catch (e: any) {
+      toast.error("خطا در بررسی اعلان‌ها: " + (e.message || "خطای ناشناخته"));
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const filtered = notifications?.filter((n: any) => filter === "all" || n.type === filter) || [];
   const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
@@ -41,6 +62,14 @@ export default function NotificationListPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleRunChecks}
+            disabled={checking}
+            className="clay-button flex items-center gap-2 px-4 py-2 text-sm bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50"
+          >
+            {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            {checking ? "در حال بررسی..." : "بررسی خودکار اعلان‌ها"}
+          </button>
           {unreadCount > 0 && (
             <button onClick={() => markAllAsRead()} className="clay-button flex items-center gap-2 px-4 py-2 text-sm">
               <Check className="h-4 w-4" /> همه خوانده شد

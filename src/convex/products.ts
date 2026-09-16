@@ -92,13 +92,28 @@ export const listPaginated = query({
       ? String(sliced[sliced.length - 1]._creationTime)
       : undefined;
 
+    // totalEstimate: count ALL matching products (not just current page)
+    const totalCount = await q.collect().then((all) => {
+      const list = args.activeOnly !== false ? all.filter((p) => p.isActive) : all;
+      // If search is active, filter the total too
+      if (args.search) {
+        const sq = args.search.toLowerCase();
+        return list.filter(
+          (p) =>
+            p.name.toLowerCase().includes(sq) ||
+            (p.description || "").toLowerCase().includes(sq) ||
+            (p.tags || []).some((t) => t.toLowerCase().includes(sq)) ||
+            (p.brand || "").toLowerCase().includes(sq)
+        ).length;
+      }
+      return list.length;
+    });
+
     return {
       results: sliced,
       nextCursor,
       hasMore,
-      totalEstimate: await q.collect().then((all) =>
-        args.activeOnly !== false ? all.filter((p) => p.isActive).length : all.length
-      ),
+      totalEstimate: totalCount,
     };
   },
 });
