@@ -1,0 +1,173 @@
+# 🔑 متغیرهای محیطی (Environment Variables)
+
+> **آخرین بروزرسانی:** سپتامبر ۲۰۲۶
+> **روش مدیریت:** از طریق Keys/API Keys در پنل Freebuff
+
+---
+
+## فهرست متغیرها
+
+### متغیرهای Convex (Backend)
+
+| متغیر | توضیح | مقدار فعلی | الزامی |
+|--------|-------|------------|--------|
+| `CONVEX_URL` | آدرس deployment Convex | `https://loud-planets-prove.convex.cloud` | ✅ |
+| `CONVEX_SITE_URL` | آدرس سایت Convex (برای Auth) | از خودکار Convex | ✅ |
+| `VLY_CONVEX_AUTH_ISSUER` | آدرس صادرکننده JWT فری‌باف | `https://auth.freebuff.app` | ✅ |
+| `CONVEX_AUTH_SECRET` | رمز احراز هویت Convex | از پنل Convex | ✅ |
+
+### متغیرهای Convex در فایل `convex/auth.config.ts`
+
+```typescript
+// این متغیرها در سمت سرور Convex (Cloud Function) خوانده می‌شوند:
+process.env.CONVEX_SITE_URL       // آدرس سایت deployment
+process.env.VLY_CONVEX_AUTH_ISSUER // آدرس Freebuff Auth
+```
+
+### متغیرهای سمت فرانت (Client-side)
+
+> ⚠️ **نکته مهم:** در این پروژه از Vite استفاده می‌شود و متغیرهای سمت کلاینت با پیشوند `VITE_` تعریف می‌شوند.
+
+| متغیر | توضیح | مقدار فعلی | الزامی |
+|--------|-------|------------|--------|
+| `VITE_CONVEX_URL` | آدرس Convex برای کلاینت | از Vite env | ✅ |
+
+### متغیرهای وابسته به پکیج‌ها
+
+> این پروژه از **هیچ سرویس خارجی اضافی** مانند SendGrid, Stripe, یا SMS provider استفاده نمی‌کند.
+> تمام تنظیمات از طریق **دیتابیس settings** مدیریت می‌شوند.
+
+---
+
+## راهنمای اضافه کردن متغیر جدید
+
+### ۱. متغیر سمت سرور (Backend / Convex)
+
+```typescript
+// در فایل‌های convex/*.ts
+// فقط در use node files یا http handlers قابل دسترسی است
+const value = process.env.MY_SECRET_KEY;
+```
+
+### ۲. متغیر سمت کلاینت (Frontend / Vite)
+
+```bash
+# فایل .env.local
+VITE_MY_PUBLIC_KEY=abc123
+```
+
+```typescript
+// در فایل‌های src/*.tsx
+const value = import.meta.env.VITE_MY_PUBLIC_KEY;
+```
+
+---
+
+## نحوه اضافه کردن متغیر در پنل Freebuff
+
+1. به پنل پروژه بروید
+2. روی **Keys/API keys** کلیک کنید
+3. نام متغیر را وارد کنید (مثلاً `MY_API_KEY`)
+4. مقدار آن را وارد کنید
+5. ذخیره کنید
+
+> ⚠️ **هرگز مقادیر API Key را در کد منبع قرار ندهید!**
+> فقط از `process.env` یا `import.meta.env` استفاده کنید.
+
+---
+
+## متغیرهای پیشنهادی برای آینده
+
+اگر بخواهید سرویس‌های خارجی اضافه کنید، این متغیرها را نیاز خواهید داشت:
+
+### ایمیل (Email)
+| متغیر | توضیح | سرویس پیشنهادی |
+|--------|-------|----------------|
+| `EMAIL_API_KEY` | کلید API ایمیل | Resend / SendGrid |
+| `EMAIL_FROM` | آدرس فرستنده | support@yourdomain.com |
+
+### پرداخت (Payment)
+| متغیر | توضیح | سرویس پیشنهادی |
+|--------|-------|----------------|
+| `PAYMENT_API_KEY` | کلید API درگاه | زرین‌پال / پی‌پینگ |
+| `PAYMENT_MERCHANT_ID` | شماره پذیرنده | درگاه بانکی |
+| `PAYMENT_CALLBACK_URL` | آدرس بازگشت | /payment/callback |
+
+### پیامک (SMS)
+| متغیر | توضیح | سرویس پیشنهادی |
+|--------|-------|----------------|
+| `SMS_API_KEY` | کلید API پنل | KavehNegar / FarazSMS |
+| `SMS_LINE` | شماره خط | 1000xxx |
+
+### آپلود فایل (File Storage)
+| متغیر | توضیح | سرویس پیشنهادی |
+|--------|-------|----------------|
+| `STORAGE_API_KEY` | کلید API | Cloudflare R2 / AWS S3 |
+| `STORAGE_BUCKET` | نام باکت | uploads |
+| `STORAGE_REGION` | منطقه | auto |
+
+### نقشه (Maps)
+| متغیر | توضیح | سرویس پیشنهادی |
+|--------|-------|----------------|
+| `MAP_TILE_URL` | آدرس Tile Server | OpenStreetMap (رایگان) |
+
+> 📝 در حال حاضر نقشه با OpenStreetMap رایگان کار می‌کند و نیاز به API Key ندارد.
+
+---
+
+## ساختار `.env.local`
+
+```bash
+# ═══════════════════════════════════════════════
+# متغیرهای محیطی پروژه فروشگاهی
+# ═══════════════════════════════════════════════
+
+# ── Convex ──
+VITE_CONVEX_URL=https://loud-planets-prove.convex.cloud
+
+# ── Freebuff Auth ──
+VLY_CONVEX_AUTH_ISSUER=https://auth.freebuff.app
+
+# ── ایمیل (اختیاری) ──
+# EMAIL_API_KEY=
+# EMAIL_FROM=
+
+# ── پرداخت (اختیاری) ──
+# PAYMENT_API_KEY=
+# PAYMENT_MERCHANT_ID=
+
+# ── پیامک (اختیاری) ──
+# SMS_API_KEY=
+# SMS_LINE=
+
+# ── آپلود فایل (اختیاری) ──
+# STORAGE_API_KEY=
+# STORAGE_BUCKET=
+```
+
+---
+
+## نکات امنیتی
+
+1. **هرگز** `.env.local` را در Git قرار ندهید (در `.gitignore` موجود است)
+2. **هرگز** مقادیر حساس را در کد منبع `console.log` نکنید
+3. متغیرهای سمت کلاینت (`VITE_*`) در مرورگر قابل مشاهده هستند — فقط اطلاعات عمومی در آنها قرار دهید
+4. متغیرهای سمت سرور (`process.env.*`) فقط در Cloud Function های Convex قابل دسترسی هستند
+5. برای هر محیط (development, staging, production) مقادیر جداگانه تنظیم کنید
+
+---
+
+## نحوه کار با دیتابیس Settings
+
+در این پروژه بیشتر تنظیمات از طریق **دیتابیس settings** مدیریت می‌شوند نه `.env.local`.
+این یعنی:
+
+- ✅ تغییرات از پنل ادمین اعمال می‌شوند
+- ✅ نیازی به دیپلوی مجدد نیست
+- ✅ قابل تغییر توسط کاربر نهایی
+
+فایل‌هایی که از `settings` دیتابیس خوانده می‌شوند:
+- `src/modules/settings/hooks/use-settings.ts` — هوک اصلی خواندن تنظیمات
+- `src/config/themes.ts` — تم‌ها و رنگ‌ها
+- `src/config/sidebar-themes.ts` — تم‌های سایدبار
+- `src/hooks/use-landing-nav.ts` — تنظیمات نوار ناوبری صفحه اصلی

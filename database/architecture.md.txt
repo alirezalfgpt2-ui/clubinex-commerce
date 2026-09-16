@@ -1,0 +1,935 @@
+# 🏗️ مستندات معماری و نحوه عملکرد کدها
+
+> **آخرین بروزرسانی:** سپتامبر ۲۰۲۶
+> **تکنولوژی:** React + TypeScript + Vite + Convex + Tailwind CSS
+
+---
+
+## فهرست مطالب
+
+1. [نمای کلی پروژه](#۱-نمای-کلی-پروژه)
+2. [ساختار پوشه‌ها](#۲-ساختار-پوشه‌ها)
+3. [نحوه راه‌اندازی](#۳-نحوه-راه‌اندازی)
+4. [معماری فرانت‌اند (Frontend)](#۴-معماری-فرانت‌اند)
+5. [معماری بکند (Backend / Convex)](#۵-معماری-بکند)
+6. [سیستم احراز هویت](#۶-سیستم-احراز-هویت)
+7. [سیستم روتینگ](#۷-سیستم-روتينگ)
+8. [سیستم تم و استایل](#۸-سیستم-تم-و-استایل)
+9. [سیستم تنظیمات](#۹-سیستم-تنظیمات)
+10. [سیستم چت زنده](#۱۰-سیستم-چت-زنده)
+11. [سیستم پرداخت](#۱۱-سیستم-پرداخت)
+12. [سیستم ترجمه (چندزبانه)](#۱۲-سیستم-ترجمه)
+13. [نحوه عملکرد تست‌ها](#۱۳-نحوه-عملکرد-تست‌ها)
+14. [نحوه مایگریشن و بروزرسانی](#۱۴-مایگریشن)
+15. [نکات فنی مهم](#۱۵-نکات-فنی-مهم)
+
+---
+
+## ۱. نمای کلی پروژه
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    مرورگر کاربر                          │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │              React SPA (Vite)                      │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │  │
+│  │  │  Navbar   │  │ Sidebar  │  │   Content     │   │  │
+│  │  │  (3 rows) │  │ (admin)  │  │   (Pages)     │   │  │
+│  │  └──────────┘  └──────────┘  └──────────────┘   │  │
+│  └───────────────────────┬───────────────────────────┘  │
+│                          │                              │
+└──────────────────────────┼──────────────────────────────┘
+                           │ Real-time subscriptions
+                           │ (Convex Client)
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│              Convex Backend (Cloud Functions)            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐    │
+│  │ Queries  │  │Mutations │  │    Actions        │    │
+│  │ (read)   │  │ (write)  │  │ (server-side)    │    │
+│  └────┬─────┘  └────┬─────┘  └────────┬─────────┘    │
+│       │              │                  │              │
+│       ▼              ▼                  ▼              │
+│  ┌──────────────────────────────────────────────┐     │
+│  │           Convex Database (NoSQL)             │     │
+│  │  users | products | orders | settings | ...   │     │
+│  └──────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ۲. ساختار پوشه‌ها
+
+```
+project/
+├── database/                    # 📚 مستندات
+│   ├── schema.md               # ساختار دیتابیس
+│   ├── env-variables.md        # متغیرهای محیطی
+│   └── architecture.md         # این فایل
+│
+├── src/
+│   ├── main.tsx                # نقطه شروع برنامه
+│   ├── App.tsx                 # روتینگ اصلی
+│   ├── index.css               # استایل‌های سراسری + Tailwind
+│   │
+│   ├── components/             # 🧩 کامپوننت‌های مشترک
+│   │   ├── ui/                 # کامپوننت‌های پایه (shadcn/ui)
+│   │   │   ├── button.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   └── ... (30+ کامپوننت)
+│   │   ├── ErrorBoundary.tsx   # مدیریت خطای سراسری
+│   │   ├── RequireAuth.tsx     # محافظ مسیر (Auth)
+│   │   ├── SEO.tsx             # متاتگ‌های سئو
+│   │   ├── ConfirmDialog.tsx   # دیالوگ تایید
+│   │   ├── LocationPicker.tsx  # انتخاب موقعیت نقشه
+│   │   └── DatePicker.tsx      # تقویم شمسی
+│   │
+│   ├── config/                 # ⚙️ تنظیمات کلاینت
+│   │   ├── themes.ts           # تم‌ها + رنگ‌ها + applyTheme()
+│   │   ├── sidebar-themes.ts   # تم‌های سایدبار
+│   │   └── persian-date.ts     # توابع تاریخ شمسی
+│   │
+│   ├── hooks/                  # 🪝 هوک‌های سفارشی
+│   │   ├── use-landing-nav.ts  # خواندن تنظیمات نوار ناوبری
+│   │   └── use-persian-date.ts # هوک تقویم شمسی
+│   │
+│   ├── lib/                    # 📦 کتابخانه‌ها و کمک‌کننده‌ها
+│   │   ├── utils.ts            # تابع cn() و کمک‌کننده‌ها
+│   │   ├── i18n.tsx            # سیستم چندزبانه
+│   │   └── persian-date.ts     # تبدیل تاریخ شمسی
+│   │
+│   ├── modules/                # 📦 ماژول‌های اصلی
+│   │   ├── landing/            # صفحه اصلی (لندینگ)
+│   │   │   └── components/
+│   │   │       ├── Navbar.tsx          # نوار ناوبری ۳ ردیفه
+│   │   │       ├── MegaMenu.tsx        # مگامنوی دسته‌بندی
+│   │   │       ├── MobileBottomBar.tsx # نوار پایین موبایل
+│   │   │       ├── LiveChatWidget.tsx  # ویجت چت زنده
+│   │   │       └── Footer.tsx          # فوتر
+│   │   │
+│   │   ├── products/           # مدیریت محصولات
+│   │   │   ├── pages/
+│   │   │   │   ├── ProductListPage.tsx  # لیست (جدولی/کارتی)
+│   │   │   │   ├── ProductCreatePage.tsx# ایجاد جدید
+│   │   │   │   ├── ProductEditPage.tsx  # ویرایش
+│   │   │   │   └── ComparePage.tsx      # مقایسه محصولات
+│   │   │   └── components/
+│   │   │       └── ProductCard.tsx      # کارت محصول
+│   │   │
+│   │   ├── categories/         # مدیریت دسته‌بندی‌ها
+│   │   │   └── pages/
+│   │   │       └── CategoryListPage.tsx # لیست درختی
+│   │   │
+│   │   ├── orders/             # مدیریت سفارشات
+│   │   │   └── pages/
+│   │   │       └── OrderListPage.tsx    # لیست + جزئیات
+│   │   │
+│   │   ├── cart/               # سبد خرید + تسویه حساب
+│   │   │   └── pages/
+│   │   │       ├── CartPage.tsx         # سبد خرید
+│   │   │       └── CheckoutPage.tsx     # تسویه حساب
+│   │   │
+│   │   ├── discounts/          # مدیریت تخفیف‌ها
+│   │   ├── shipping/           # مدیریت روش‌های ارسال
+│   │   ├── users/              # مدیریت کاربران
+│   │   ├── roles/              # مدیریت نقش‌ها
+│   │   ├── tickets/            # سیستم تیکتینگ
+│   │   ├── chat/               # چت پنل ادمین
+│   │   ├── reports/            # گزارش‌ها و تحلیل‌ها
+│   │   ├── settings/           # تنظیمات
+│   │   │   ├── pages/
+│   │   │   │   └── SettingsPage.tsx
+│   │   │   ├── sections/       # بخش‌های جداگانه تنظیمات
+│   │   │   │   ├── GeneralSection.tsx
+│   │   │   │   ├── ThemesSection.tsx
+│   │   │   │   ├── SEOSection.tsx
+│   │   │   │   ├── PaymentSection.tsx
+│   │   │   │   ├── SMSSection.tsx
+│   │   │   │   ├── EmailSection.tsx
+│   │   │   │   ├── ShippingSection.tsx
+│   │   │   │   ├── TaxSection.tsx
+│   │   │   │   ├── SecuritySection.tsx
+│   │   │   │   ├── LicenseSection.tsx
+│   │   │   │   ├── FontSection.tsx
+│   │   │   │   ├── ContentSection.tsx
+│   │   │   │   ├── FAQSection.tsx
+│   │   │   │   ├── LandingNavSection.tsx
+│   │   │   │   ├── SocialMediaSection.tsx
+│   │   │   │   └── TranslationsSection.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── use-settings.ts
+│   │   │   └── components/
+│   │   │       └── SettingsUI.tsx
+│   │   │
+│   │   ├── shared/             # مشترک بین ماژول‌ها
+│   │   │   └── layout/
+│   │   │       ├── AdminLayout.tsx     # لایوت پنل ادمین
+│   │   │       ├── Sidebar.tsx         # سایدبار (ریفکتور شده)
+│   │   │       ├── Topbar.tsx          # تاپبار
+│   │   │       ├── Breadcrumb.tsx      # برادکرامپ
+│   │   │       └── sidebar/            # کامپوننت‌های سایدبار
+│   │   │           ├── nav-config.ts
+│   │   │           ├── SidebarHeader.tsx
+│   │   │           ├── SidebarUser.tsx
+│   │   │           ├── SidebarSearch.tsx
+│   │   │           └── SidebarNav.tsx
+│   │   │
+│   │   ├── newsletter/         # خبرنامه
+│   │   ├── blog/               # بلاگ
+│   │   ├── brands/             # برندها
+│   │   ├── reviews/            # نظرات
+│   │   ├── wishlist/           # علاقه‌مندی‌ها
+│   │   ├── giftcards/          # کارت‌های هدیه
+│   │   ├── loyalty/            # امتیازات وفاداری
+│   │   ├── bookings/           # رزرو/نوبت‌دهی
+│   │   ├── templates/          # قالب‌های ایمیل
+│   │   └── notifications/      # اعلانات
+│   │
+│   ├── pages/                  # 📄 صفحات عمومی (غیر پنل)
+│   │   ├── Landing.tsx         # صفحه اصلی
+│   │   ├── Auth.tsx            # ورود/ثبت‌نام
+│   │   ├── StoreProductsPage.tsx # لیست محصولات فروشگاه
+│   │   ├── StoreProductDetailPage.tsx # جزئیات محصول
+│   │   ├── AboutPage.tsx       # درباره ما
+│   │   ├── ContactPage.tsx     # تماس با ما
+│   │   ├── LegalPage.tsx       # شرایط و قوانین
+│   │   ├── BlogPage.tsx        # بلاگ
+│   │   ├── OrderTrackingPage.tsx # پیگیری سفارش
+│   │   └── NotFoundPage.tsx    # صفحه ۴۰۴
+│   │
+│   └── __tests__/              # 🧪 تست‌ها
+│       ├── e2e-purchase-flow.test.ts   # تست جریان خرید
+│       └── security-penetration.test.ts # تست نفوذ
+│
+├── convex/                     # ⚡ بکند Convex
+│   ├── schema.ts               # اسکیمای دیتابیس
+│   ├── auth.config.ts          # تنظیمات احراز هویت
+│   ├── auth.ts                 # لاگین/ثبت‌نام
+│   ├── http.ts                 # مسیرهای HTTP
+│   ├── seed.ts                 # داده‌های تستی
+│   ├── users.ts                # مدیریت کاربران
+│   ├── products.ts             # CRUD محصولات
+│   ├── categories.ts           # CRUD دسته‌بندی‌ها
+│   ├── orders.ts               # CRUD سفارشات
+│   ├── cart.ts                 # سبد خرید
+│   ├── discounts.ts            # CRUD تخفیف‌ها
+│   ├── shipping.ts             # CRUD روش‌های ارسال
+│   ├── settings.ts             # CRUD تنظیمات
+│   ├── notifications.ts        # CRUD اعلانات
+│   ├── tickets.ts              # CRUD تیکت‌ها
+│   ├── messages.ts             # CRUD پیام‌ها (چت)
+│   ├── roles.ts                # CRUD نقش‌ها
+│   ├── audit.ts                # لاگ فعالیت
+│   ├── reviews.ts              # CRUD نظرات
+│   ├── wishlists.ts            # CRUD علاقه‌مندی‌ها
+│   ├── newsletters.ts          # CRUD خبرنامه
+│   ├── bookings.ts             # CRUD رزروها
+│   ├── emailTemplates.ts       # CRUD قالب‌های ایمیل
+│   ├── loyaltyPoints.ts        # CRUD امتیازات
+│   ├── giftCards.ts            # CRUD کارت‌های هدیه
+│   ├── contentPages.ts         # CRUD صفحات محتوا
+│   ├── autoNotifications.ts    # نوتیفیکیشن خودکار
+│   ├── smsNotifications.ts     # ارسال پیامک
+│   ├── rateLimit.ts            # محدودیت نرخ درخواست
+│   └── activityLogs.ts         # لاگ فعالیت
+│
+├── public/                     # 📁 فایل‌های استاتیک
+│   ├── logo.svg
+│   ├── logo.png
+│   ├── manifest.webmanifest    # PWA manifest
+│   ├── robots.txt
+│   └── sitemap.xml
+│
+├── index.html                  # نقطه ورود HTML
+├── vite.config.ts              # تنظیمات Vite
+├── tailwind.config.ts          # تنظیمات Tailwind
+├── tsconfig.json               # تنظیمات TypeScript
+├── vitest.config.ts            # تنظیمات تست
+└── package.json                # وابستگی‌ها
+```
+
+---
+
+## ۳. نحوه راه‌اندازی
+
+### پیش‌نیازها
+- Node.js 18+
+- Package Manager: npm / yarn / pnpm
+
+### مراحل راه‌اندازی
+
+```bash
+# ۱. نصب وابستگی‌ها
+npm install
+
+# ۲. اجرای Convex در حالت dev
+npx convex dev
+
+# ۳. اجرای Vite در حالت dev (ترمینال جداگانه)
+npm run dev
+
+# ۴. (اختیاری) اجرای تست‌ها
+npx vitest run
+
+# ۵. (اختیاری) بیلد پروژه
+npm run build
+```
+
+### نکات مهم اجرا
+
+- `npx convex dev` باید در یک ترمستان جداگانه اجرا شود
+- HMR غیرفعال است (`server.hmr: false` در vite.config.ts)
+- تغییرات فایل‌ها خودکار اعمال می‌شوند
+
+---
+
+## ۴. معماری فرانت‌اند
+
+### ۴.۱. جریان داده
+
+```
+User Action → React State → useMutation() → Convex Cloud Function → Database
+                                                                      ↓
+User Screen ← React Re-render ← useQuery() ← Real-time Subscription ←
+```
+
+### ۴.۲. الگوی کامپوننت‌ها
+
+```typescript
+// الگوی استاندارد یک صفحه
+export default function SomePage() {
+  // ۱. خواندن داده از Convex (reactive)
+  const data = useQuery(api.module.getData, { arg });
+
+  // ۲. هوک‌های محلی
+  const [filter, setFilter] = useState("");
+  
+  // ۳. هوک‌های سفارشی
+  const { getVal, setVal } = useSettings("category");
+
+  // ۴. mutation برای نوشتن
+  const updateData = useMutation(api.module.updateData);
+
+  // ۵. فیلتر و پردازش داده
+  const filtered = data?.filter(item => 
+    item.name.includes(filter)
+  );
+
+  // ۶. رندر
+  return (
+    <div>
+      {/* فیلترها */}
+      {/* جدول/کارت */}
+      {/* مودال‌ها */}
+    </div>
+  );
+}
+```
+
+### ۴.۳. کامپوننت‌های UI پایه (shadcn/ui)
+
+تمام کامپوننت‌های UI در `src/components/ui/` قرار دارند و از **Radix UI** استفاده می‌کنند:
+
+| کامپوننت | استفاده |
+|----------|---------|
+| `Button` | دکمه‌ها با variantهای مختلف |
+| `Dialog` | مودال‌ها |
+| `DropdownMenu` | منوی کشویی |
+| `Select` | دراپ‌داون با قابلیت جستجو |
+| `Tabs` | تب‌ها |
+| `Sidebar` | سایدبار ادمین |
+| `DataTable` | جدول پویا با سورت/فیلتر/صفحه‌بندی |
+| `Badge` | برچسب‌ها |
+| `Card` | کارت‌ها |
+| `Toast (sonner)` | اعلان‌ها |
+
+### ۴.۴. انیمیشن‌ها (Framer Motion)
+
+```typescript
+import { motion } from "framer-motion";
+
+// انیمیشن fade-in
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+>
+
+// انیمیشن hover
+<motion.button whileHover={{ scale: 1.05 }}>
+
+// ترنزیشن صفحات (LayoutGroup)
+<LayoutGroup>
+  <motion.div layoutId="page-transition">
+```
+
+---
+
+## ۵. معماری بکند (Backend / Convex)
+
+### ۵.۱. انواع توابع
+
+| نوع | توضیح | مثال |
+|-----|-------|------|
+| `query` | خواندن داده (reactive) | `products.listActive` |
+| `mutation` | نوشتن/بروزرسانی داده | `orders.updateStatus` |
+| `action` | عملیات خارجی (HTTP, file, ...) | `smsNotifications.send` |
+| `http` | endpoint‌های HTTP | `auth.addHttpRoutes` |
+
+### ۵.۲. الگوی استاندارد یک فایل بکند
+
+```typescript
+// src/convex/products.ts
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+// ── لیست (خواندن) ──
+export const listActive = query({
+  args: {},                           // آرگومان‌ها
+  handler: async (ctx) => {           // handler
+    return await ctx.db
+      .query("products")
+      .withIndex("by_isActive", (q) => q.eq("isActive", true))
+      .order("desc")
+      .collect();                     // لیست نتایج
+  },
+});
+
+// ── ایجاد (نوشتن) ──
+export const create = mutation({
+  args: {
+    name: v.string(),
+    price: v.number(),
+    // ...
+  },
+  handler: async (ctx, args) => {
+    // اعتبارسنجی
+    if (args.price < 0) throw new Error("قیمت نمی‌تواند منفی باشد");
+    
+    // ثبت لاگ
+    const userId = await getAuthUserId(ctx);
+    await ctx.db.insert("auditLogs", {
+      action: "create",
+      entity: "product",
+      entityId: "new",
+      userId,
+    });
+    
+    // ایجاد رکورد
+    return await ctx.db.insert("products", {
+      ...args,
+      views: 0,
+      createdAt: Date.now(),
+    });
+  },
+});
+```
+
+### ۵.۳. realtime Subscriptions
+
+```typescript
+// در کلاینت - useQuery به صورت خودکار subscription ایجاد می‌کند
+const products = useQuery(api.products.listActive);
+// هر تغییر در دیتابیس → به‌روزرسانی خودکار UI
+
+// در بکند - useQuery reactive است
+// هیچ polling یا refetch دستی نیست
+```
+
+### ۵.۴. ایندکس‌گذاری
+
+```typescript
+// ایجاد ایندکس در schema.ts
+products: defineTable({...})
+  .index("by_category", ["categoryId"])
+  .index("by_price", ["price"])
+
+// استفاده از ایندکس در query
+export const listByCategory = query({
+  args: { categoryId: v.id("categories") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("products")
+      .withIndex("by_category", (q) => 
+        q.eq("categoryId", args.categoryId)
+      )
+      .collect();
+  },
+});
+```
+
+---
+
+## ۶. سیستم احراز هویت
+
+### ۶.۱. جریان لاگین
+
+```
+کاربر → Auth.tsx → @convex-dev/auth → Convex Auth
+                                    ↓
+                              استفاده از یکی از:
+                              • Email + Password
+                              • Email OTP
+                              • Guest (مهمان)
+                              • Freebuff Federated JWT
+```
+
+### ۶.۲. فایل‌های کلیدی
+
+| فایل | وظیفه |
+|------|-------|
+| `src/convex/auth.config.ts` | تنظیمات providers احراز هویت |
+| `src/convex/auth.ts` | توابع لاگین/ثبت‌نام/خروج |
+| `src/convex/auth/emailOtp.ts` | احراز هویت با کد OTP |
+| `src/components/RequireAuth.tsx` | محافظ مسیر (redirect به /auth) |
+| `src/pages/Auth.tsx` | صفحه ورود/ثبت‌نام |
+
+### ۶.۳. جریان Protect Route
+
+```
+URL: /dashboard/products
+    ↓
+RequireAuth.tsx
+    ↓
+isSignedIn?
+├── Yes → <Outlet /> (صفحه محصولات)
+└── No  → redirect to /auth?returnTo=/dashboard/products
+```
+
+### ۶.۴. امنیت
+
+- **Rate Limiting:** `src/convex/rateLimit.ts`
+- **Login Attempts:** `src/convex/loginAttempts.ts` (قفل پس از ۵ تلاش)
+- **Captcha:** از طریق تنظیمات قابل فعال/غیرفعال
+- **Audit Logging:** تمام عملیات در `auditLogs` ثبت می‌شود
+
+---
+
+## ۷. سیستم روتینگ
+
+### ۷.۱. مسیرهای اصلی
+
+```typescript
+// src/main.tsx — React Router v7
+<Routes>
+  {/* ── مسیرهای عمومی ── */}
+  <Route path="/" element={<Landing />} />
+  <Route path="/auth" element={<Auth />} />
+  <Route path="/products" element={<StoreProductsPage />} />
+  <Route path="/products/:slug" element={<StoreProductDetailPage />} />
+  <Route path="/about" element={<AboutPage />} />
+  <Route path="/contact" element={<ContactPage />} />
+  <Route path="/legal" element={<LegalPage />} />
+  <Route path="/blog" element={<BlogPage />} />
+  <Route path="/track-order" element={<OrderTrackingPage />} />
+  <Route path="/compare" element={<ComparePage />} />
+  
+  {/* ── مسیرهای محافظت‌شده (پنل ادمین) ── */}
+  <Route path="/dashboard" element={<RequireAuth><AdminLayout /></RequireAuth>}>
+    <Route index element={<DashboardHome />} />
+    <Route path="products" element={<ProductListPage />} />
+    <Route path="products/create" element={<ProductCreatePage />} />
+    <Route path="products/edit/:slug" element={<ProductEditPage />} />
+    <Route path="categories" element={<CategoryListPage />} />
+    <Route path="orders" element={<OrderListPage />} />
+    <Route path="users" element={<UserListPage />} />
+    <Route path="roles" element={<RoleListPage />} />
+    <Route path="tickets" element={<TicketListPage />} />
+    <Route path="chat" element={<ChatPage />} />
+    <Route path="settings" element={<SettingsPage />} />
+    <Route path="reports" element={<ReportsPage />} />
+    {/* ... بیش از ۳۰ مسیر دیگر */}
+  </Route>
+  
+  {/* ── ۴۰۴ ── */}
+  <Route path="*" element={<NotFoundPage />} />
+</Routes>
+```
+
+### ۷.۲. Lazy Loading
+
+تمام صفحات با `React.lazy()` لود می‌شوند:
+
+```typescript
+const ProductListPage = lazy(() => import("@/modules/products/pages/ProductListPage"));
+```
+
+این باعث می‌شود:
+- هر صفحه در فایل جداگانه‌ای بیلد شود
+- فقط صفحه مورد نیاز لود شود
+- سرعت بارگذاری اولیه بالا برود
+
+---
+
+## ۸. سیستم تم و استایل
+
+### ۸.۱. ساختار تم‌ها
+
+```typescript
+// src/config/themes.ts
+interface Theme {
+  name: string;
+  label: string;
+  colors: {
+    primary: string;        // رنگ اصلی
+    primaryLight: string;   // رنگ اصلی روشن
+    accent: string;         // رنگ ثانویه
+    // ...
+  };
+  sidebar: {
+    bg: string;
+    text: string;
+    activeBg: string;
+    activeText: string;
+    hover: string;
+  };
+  topbar: {
+    bg: string;
+    text: string;
+    border: string;
+  };
+  toolbar: {
+    bg: string;
+    text: string;
+  };
+  footer: {
+    bg: string;
+    text: string;
+  };
+}
+```
+
+### ۸.۲. نحوه اعمال تم
+
+```typescript
+// src/config/themes.ts
+export function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  root.style.setProperty("--primary", theme.colors.primary);
+  root.style.setProperty("--sidebar-bg", theme.sidebar.bg);
+  // ... تمام متغیرهای CSS
+}
+
+// در کامپوننت
+useEffect(() => {
+  applyTheme(currentTheme);
+}, [currentTheme]);
+```
+
+### ۸.۳. تم‌های سایدبار
+
+```typescript
+// src/config/sidebar-themes.ts
+export const sidebarThemes = [
+  { id: "sidebar-auto", label: "هماهنگ با تم" },  // رنگ از تم اصلی
+  { id: "sidebar-light", label: "روشن" },
+  { id: "sidebar-dark", label: "تاریک" },
+  { id: "sidebar-gradient", label: "گرادیانت" },
+];
+```
+
+### ۸.۴. Tailwind CSS
+
+```css
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* متغیرهای CSS */
+:root {
+  --primary: #6366f1;
+  --sidebar-bg: #ffffff;
+  /* ... */
+}
+
+/* کلاس‌های سفارشی */
+.clay-card {
+  @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+}
+```
+
+---
+
+## ۹. سیستم تنظیمات
+
+### ۹.۱. نحوه کار
+
+```
+┌─────────────────┐
+│ SettingsPage.tsx │ ← سایدبار با دسته‌بندی
+├─────────────────┤
+│ GeneralSection   │ ← نام سایت، لوگو، توضیحات
+│ ThemesSection    │ ← تم اصلی، سایدبار، رنگ‌ها
+│ SEOSection       │ ← متاتگ‌ها
+│ PaymentSection   │ ← درگاه‌های پرداخت
+│ SMSSection       │ ← پنل پیامکی
+│ EmailSection     │ ← تنظیمات SMTP
+│ ShippingSection  │ ← روش‌های ارسال
+│ TaxSection       │ ← مالیات
+│ SecuritySection  │ ← کپچا، قفل صفحه
+│ LicenseSection   │ ← لایسنس
+│ FontSection      │ ← فونت‌ها
+│ ContentSection   │ ← صفحات قانونی
+│ FAQSection       │ ← سوالات متداول چت
+│ LandingNavSection│ ← نوار ناوبری صفحه اصلی
+│ SocialMediaSection│ ← شبکه‌های اجتماعی
+│ TranslationsSection│ ← ترجمه‌ها
+└─────────────────┘
+```
+
+### ۹.۲. هوک useSettings
+
+```typescript
+// src/modules/settings/hooks/use-settings.ts
+const { getVal, setVal, handleSaveAll, isSaving } = useSettings("category");
+
+// خواندن مقدار
+const siteName = getVal("siteName", "نام پیش‌فرض");
+
+// نوشتن مقدار (موقت — تا ذخیره نشود اعمال نمی‌شود)
+setVal("siteName", "نام جدید");
+
+// ذخیره همه تغییرات
+await handleSaveAll();
+```
+
+---
+
+## ۱۰. سیستم چت زنده
+
+### ۱۰.۱. معماری
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  صفحه هوم    │────>│  Convex DB   │<────│  پنل ادمین   │
+│ (ChatWidget) │     │ (messages)   │     │  (ChatPage)  │
+└──────────────┘     └──────────────┘     └──────────────┘
+       │                    │                    │
+       │    Real-time Subscription              │
+       └────────────────────┼────────────────────┘
+                            │
+                    useQuery(api.messages.listByChat)
+```
+
+### ۱۰.۲. ویژگی‌ها
+
+- ✅ چت بلادرنگ با Real-time
+- ✅ تیک تک (ارسال) و تیک دوبل (خوانده شده)
+- ✅ خط جداکننده پیام‌های خوانده/نخوانده
+- ✅ ساعت و تاریخ دقیق
+- ✅ امتیازدهی پس از پایان چت
+- ✅ FAQ پیش‌فرض
+- ✅ فیلتر پیشرفته در پنل ادمین
+- ✅ ارجاع به تیکت
+- ✅ حذف مکالمه
+
+---
+
+## ۱۱. سیستم پرداخت
+
+### ۱۱.۱. جریان خرید
+
+```
+۱. کاربر محصول را به سبد اضافه می‌کند (cart)
+       ↓
+۲. وارد CheckoutPage می‌شود
+       ↓
+۳. آدرس + کد تخفیف + روش ارسال را انتخاب می‌کند
+       ↓
+۴. درگاه پرداخت را انتخاب می‌کند
+       ↓
+۵. به درگاه بانکی redirect می‌شود
+       ↓
+۶. پرداخت موفق/ناموفق
+       ↓
+۷. callback به /payment/callback
+       ↓
+۸. سفارش ثبت می‌شود + اعلان ارسال می‌شود
+```
+
+### ۱۱.۲. درگاه‌های پشتیبانی شده
+
+| درگاه | وضعیت |
+|-------|-------|
+| زرین‌پال | ✅ آماده |
+| پی‌پینگ | ✅ آماده |
+| سامان‌کیان | ✅ آماده |
+| پاسارگاد | ✅ آماده |
+| ملت | ✅ آماده |
+
+> ⚠️ در حال حاضر پرداخت شبیه‌سازی شده است. برای اتصال به درگاه واقعی، API Key درگاه را در تنظیمات وارد کنید.
+
+---
+
+## ۱۲. سیستم ترجمه (چندزبانه)
+
+### ۱۲.۱. ساختار
+
+```typescript
+// src/lib/i18n.tsx
+export function useTranslation() {
+  const { language, t } = useContext(I18nContext);
+  return { language, t };
+}
+
+// استفاده
+const { t } = useTranslation();
+return <h1>{t("dashboard.title")}</h1>;
+```
+
+### ۱۲.۲. دیتابیس ترجمه‌ها
+
+کلیدها در جدول `translations` ذخیره می‌شوند:
+
+| کلید | fa | en |
+|------|----|----|
+| `dashboard.title` | داشبورد | Dashboard |
+| `products.name` | محصولات | Products |
+| `orders.title` | سفارشات | Orders |
+
+---
+
+## ۱۳. نحوه عملکرد تست‌ها
+
+### ۱۳.۱. تست جریان خرید (E2E)
+
+```bash
+npx vitest run src/__tests__/e2e-purchase-flow.test.ts
+```
+
+این تست مراحل زیر را بررسی می‌کند:
+1. ✅ ثبت‌نام کاربر
+2. ✅ اضافه کردن به سبد خرید
+3. ✅ تکمیل اطلاعات
+4. ✅ ثبت سفارش
+5. ✅ پرداخت شبیه‌سازی شده
+6. ✅ ارسال نوتیفیکیشن
+7. ✅ تغییر وضعیت سفارش
+8. ✅ تحویل
+
+### ۱۳.۲. تست نفوذ
+
+```bash
+npx vitest run src/__tests__/security-penetration.test.ts
+```
+
+این تست حملات زیر را بررسی می‌کند:
+1. ✅ SQL Injection
+2. ✅ XSS
+3. ✅ Brute Force
+4. ✅ CSRF
+5. ✅ ارتقاء دسترسی (Privilege Escalation)
+6. ✅ دسترسی غیرمجاز (IDOR)
+
+---
+
+## ۱۴. مایگریشن
+
+### ۱۴.۱. نحوه کار Convex
+
+Convex از **schema-based migration** استفاده می‌کند:
+
+1. تغییرات در `schema.ts` اعمال می‌شوند
+2. با `npx convex dev` اعمال می‌شوند
+3. فیلدهای جدید `v.optional()` باشند (برای سازگاری)
+
+### ۱۴.۲. قوانین مایگریشن
+
+```typescript
+// ✅ درست: فیلد جدید اختیاری
+newField: v.optional(v.string())
+
+// ❌ اشتباه: فیلد جدید اجباری بدون مقدار پیش‌فرض
+newField: v.string()  // باعث خطا در رکوردهای قدیمی می‌شود
+
+// ✅ درست: اگر اجباری است، مقدار پیش‌فرض بدهید
+newField: v.string()  // و در handler مقدار پیش‌فرض تعیین کنید
+```
+
+---
+
+## ۱۵. نکات فنی مهم
+
+### ۱۵.۱. React 19
+
+- این پروژه از **React 19** استفاده می‌کند
+- `useRef` بدون مقدار اولیه کار نمی‌کند: `useRef(null)` ✅
+- `useTransition` و `useDeferredValue` در دسترس هستند
+
+### ۱۵.۲. TypeScript Strict Mode
+
+```json
+{
+  "strict": true,
+  "noUnusedLocals": false,
+  "noUnusedParameters": false
+}
+```
+
+### ۱۵.۳. کدنویسی RTL
+
+تمام صفحات به صورت **راست به چپ (RTL)** طراحی شده‌اند:
+
+```html
+<html lang="fa" dir="rtl">
+```
+
+### ۱۵.۴. PWA Support
+
+```json
+// manifest.webmanifest
+{
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff"
+}
+```
+
+### ۱۵.۵. Lazy Loading و Code Splitting
+
+تمام صفحات با `React.lazy()` و `<Suspense>` لود می‌شوند.
+فایل‌های بزرگ (Vendor) به صورت جداگانه بیلد می‌شوند:
+
+```
+react-vendor.js    — React, ReactDOM, React Router
+convex-vendor.js   — Convex
+radix-ui.js        — تمام Radix UI
+framer-motion.js   — Framer Motion
+charts.js          — Recharts
+forms.js           — React Hook Form + Zod
+```
+
+### ۱۵.۶. سازگاری با MySQL
+
+برای مهاجرت به MySQL:
+1. اسکیما در `database/schema.md` را به SQL تبدیل کنید
+2. ارتباطات خارجی (Foreign Keys) اضافه کنید
+3. `v.id()` ها به `INT AUTO_INCREMENT` تبدیل شوند
+4. `v.array()` ها به جداول واسط تبدیل شوند
+5. Real-time subscriptions نیاز به WebSocket دارند
+
+### ۱۵.۷. عملکرد و بهینه‌سازی
+
+| تکنیک | محل استفاده |
+|--------|-------------|
+| **Lazy Loading** | تمام صفحات |
+| **Code Splitting** | Vendor libraries |
+| **Index** | تمام queries پرتکرار |
+| **Batch Queries** | گزارش‌ها |
+| **Virtual Scroll** | لیست‌های بزرگ |
+| **Debounce** | جستجو |
+| **Memoization** | محاسبات سنگین |
+
+---
+
+> 📝 **تعداد کل فایل‌ها:** ۲۰۰+ فایل
+> 📝 **تعداد کل کامپوننت‌ها:** ۱۰۰+ کامپوننت
+> 📝 **تعداد کل صفحات:** ۴۰+ صفحه
+> 📝 **تعداد کل توابع بکند:** ۳۰+ فایل

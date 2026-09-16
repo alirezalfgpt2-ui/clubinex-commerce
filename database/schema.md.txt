@@ -1,0 +1,887 @@
+# 📊 مستندات کامل ساختار دیتابیس (Database Schema)
+
+> **فایل منبع:** `src/convex/schema.ts`
+> **موتور دیتابیس:** Convex ( Document-based — مشابه MongoDB )
+> **آخرین بروزرسانی:** سپتامبر ۲۰۲۶
+
+---
+
+## فهرست مطالب
+
+1. [جدول‌های احراز هویت (Auth Tables)](#۱-جدول‌های-احراز-هویت)
+2. [کاربران (Users)](#۲-کاربران)
+3. [محصولات (Products)](#۳-محصولات)
+4. [دسته‌بندی‌ها (Categories)](#۴-دسته‌بندی‌ها)
+5. [برندها (Brands)](#۵-برندها)
+6. [سبد خرید (Cart Items)](#۶-سبد-خرید)
+7. [سفارشات (Orders)](#۷-سفارشات)
+8. [تخفیف‌ها (Discounts)](#۸-تخفیف‌ها)
+9. [روش‌های ارسال (Shipping Methods)](#۹-روش‌های-ارسال)
+10. [تنظیمات (Settings)](#۱۰-تنظیمات)
+11. [اعلانات (Notifications)](#۱۱-اعلانات)
+12. [تیکت‌ها (Tickets)](#۱۲-تیکت‌ها)
+13. [پاسخ‌های تیکت (Ticket Replies)](#۱۳-پاسخ‌های-تیکت)
+14. [نقش‌ها (Roles)](#۱۴-نقش‌ها)
+15. [پیام‌های چت (Messages)](#۱۵-پیام‌های-چت)
+16. [لاگ فعالیت (Audit Logs)](#۱۶-لاگ-فعالیت)
+17. [بازدید محصولات (Product Views)](#۱۷-بازدید-محصولات)
+18. [رزرو/نوبت‌دهی (Bookings)](#۱۸-رزرو)
+19. [قالب‌های ایمیل (Email Templates)](#۱۹-قالب‌های-ایمیل)
+20. [علاقه‌مندی‌ها (Wishlists)](#۲۰-علاقه‌مندی‌ها)
+21. [نظرات (Reviews)](#۲۱-نظرات)
+22. [امتیازات وفاداری (Loyalty Points)](#۲۲-امتیازات-وفاداری)
+23. [خبرنامه (Newsletters)](#۲۳-خبرنامه)
+24. [تلاش‌های ورود (Login Attempts)](#۲۴-تلاش‌های-ورود)
+25. [صفحات محتوا (Content Pages)](#۲۵-صفحات-محتوا)
+26. [ترجمه‌ها (Translations)](#۲۶-ترجمه‌ها)
+27. [امتیازدهی چت (Chat Ratings)](#۲۷-امتیازدهی-چت)
+28. [لایسنس‌ها (Licenses)](#۲۸-لایسنس‌ها)
+29. [کارت‌های هدیه (Gift Cards)](#۲۹-کارت‌های-هدیه)
+30. [راهنمای انواع (Type Reference)](#۳۰-راهنمای-انواع)
+31. [Relationships (ارتباطات)](#۳۱-ارتباطات)
+
+---
+
+## ۱. جدول‌های احراز هویت
+
+از پکیج `@convex-dev/auth/server` استفاده شده و شامل جداول زیر است:
+
+| جدول | توضیح |
+|------|-------|
+| `authAccounts` | حساب‌های احراز هویت (OAuth, Email, Guest) |
+| `authSessions` | نشست‌های فعال |
+| `authRefreshTokens` | توکن‌های بازیابی |
+| `authVerificationCodes` | کدهای تایید OTP |
+| `authRateLimits` | محدودیت نرخ درخواست‌ها |
+
+> ⚠️ این جدول‌ها توسط Convex Auth مدیریت می‌شوند و نباید مستقیماً ویرایش شوند.
+
+---
+
+## ۲. کاربران (`users`)
+
+```typescript
+users: defineTable({
+  name:               v.optional(v.string()),    // نام
+  lastName:           v.optional(v.string()),    // نام خانوادگی
+  image:              v.optional(v.string()),    // تصویر پروفایل
+  email:              v.optional(v.string()),    // ایمیل
+  emailVerificationTime: v.optional(v.number()), // زمان تایید ایمیل (timestamp)
+  isAnonymous:        v.optional(v.boolean()),   // کاربر مهمان
+  role:               v.optional(v.string()),    // نقش کاربر (admin, manager, operator, user)
+  phone:              v.optional(v.string()),    // شماره تلفن
+  nationalCode:       v.optional(v.string()),    // کد ملی
+  address:            v.optional(v.string()),    // آدرس
+  postalCode:         v.optional(v.string()),    // کد پستی ۱۰ رقمی
+  avatar:             v.optional(v.string()),    // آواتار
+  birthDate:          v.optional(v.string()),    // تاریخ تولد (شمسی)
+  gender:             v.optional(v.string()),    // جنسیت (male/female)
+  isActive:           v.optional(v.boolean()),   // فعال/غیرفعال
+  isLocked:           v.optional(v.boolean()),   // قفل حساب
+  lastLogin:          v.optional(v.number()),    // آخرین زمان ورود (timestamp)
+  lockScreenTime:     v.optional(v.number()),    // زمان قفل صفحه (دقیقه)
+  createdAt:          v.optional(v.number()),    // تاریخ ایجاد (timestamp)
+  updatedAt:          v.optional(v.number()),    // تاریخ بروزرسانی (timestamp)
+})
+```
+
+**ایندکس‌ها:**
+
+| نام ایندکس | فیلدها | کاربرد |
+|------------|--------|--------|
+| `email` | `[email]` | جستجوی کاربر با ایمیل |
+| `by_role` | `[role]` | فیلتر بر اساس نقش |
+| `by_isActive` | `[isActive]` | فیلتر کاربران فعال/غیرفعال |
+
+---
+
+## ۳. محصولات (`products`)
+
+```typescript
+products: defineTable({
+  name:               v.string(),              // نام محصول (اجباری)
+  slug:               v.string(),              // اسلاگ یکتا (URL-friendly)
+  description:        v.string(),              // توضیحات کامل
+  shortDescription:   v.optional(v.string()),  // توضیحات کوتاه
+  price:              v.number(),              // قیمت اصلی (تومان)
+  salePrice:          v.optional(v.number()),  // قیمت فروش ویژه
+  stock:              v.number(),              // موجودی انبار
+  stockAlert:         v.optional(v.number()),  // آستانه هشدار موجودی کم
+  images:             v.array(v.string()),     // لینک تصاویر (حداکثر چندتا)
+  categoryId:         v.id("categories"),      // 🔗 ارجاع به دسته‌بندی
+  tags:               v.array(v.string()),     // برچسب‌ها
+  brand:              v.optional(v.string()),  // نام برند
+  weight:             v.optional(v.number()),  // وزن (گرم)
+  features:           v.optional(v.any()),     // ویژگی‌های داینامیک (JSON)
+  isFeatured:         v.boolean(),             // محصول ویژه
+  isActive:           v.boolean(),             // فعال/غیرفعال
+  views:              v.number(),              // تعداد بازدید
+  rating:             v.optional(v.number()),  // میانگین امتیاز (۰-۵)
+  reviewCount:        v.optional(v.number()),  // تعداد نظرات
+  seoTitle:           v.optional(v.string()),  // عنوان SEO
+  seoDescription:     v.optional(v.string()),  // توضیحات SEO
+  lastPriceUpdate:    v.optional(v.number()),  // آخرین تغییر قیمت
+  createdAt:          v.number(),              // تاریخ ایجاد
+  updatedAt:          v.number(),              // تاریخ بروزرسانی
+})
+```
+
+**ایندکس‌ها:**
+
+| نام ایندکس | فیلدها | کاربرد |
+|------------|--------|--------|
+| `by_slug` | `[slug]` | جستجو با اسلاگ (URL) |
+| `by_category` | `[categoryId]` | محصولات یک دسته |
+| `by_isActive` | `[isActive]` | فیلتر فعال/غیرفعال |
+| `by_isFeatured` | `[isFeatured]` | محصولات ویژه |
+| `by_price` | `[price]` | سورت بر اساس قیمت |
+| `by_views` | `[views]` | پربازدیدترین‌ها |
+
+---
+
+## ۴. دسته‌بندی‌ها (`categories`)
+
+```typescript
+categories: defineTable({
+  name:             v.string(),                                    // نام دسته
+  slug:             v.string(),                                    // اسلاگ
+  description:      v.optional(v.string()),                       // توضیحات
+  image:            v.optional(v.string()),                       // تصویر
+  parentId:         v.optional(v.id("categories")),               // 🔗 دسته والد (درختی)
+  level:            v.number(),                                    // سطح درخت (0 = ریشه)
+  order:            v.number(),                                    // ترتیب نمایش
+  isActive:         v.boolean(),                                   // فعال/غیرفعال
+  features:         v.optional(v.array(v.object({                  // ویژگی‌های داینامیک
+    key:  v.string(),
+    label: v.string(),
+  }))),
+  seoTitle:         v.optional(v.string()),                       // عنوان SEO
+  seoDescription:   v.optional(v.string()),                       // توضیحات SEO
+})
+```
+
+**ایندکس‌ها:**
+
+| نام ایندکس | فیلدها | کاربرد |
+|------------|--------|--------|
+| `by_parent` | `[parentId]` | زیردسته‌های یک دسته |
+| `by_level` | `[level]` | فیلتر بر اساس سطح |
+| `by_isActive` | `[isActive]` | دسته‌بندی‌های فعال |
+| `by_slug` | `[slug]` | جستجو با اسلاگ |
+
+> 🌳 **ساختار درختی:** از فیلد `parentId` و `level` برای ایجاد سلسله‌مراتب نامحدود استفاده می‌شود. `parentId = undefined` یعنی دسته ریشه.
+
+---
+
+## ۵. برندها (`brands`)
+
+```typescript
+brands: defineTable({
+  name:         v.string(),           // نام برند
+  slug:         v.string(),           // اسلاگ
+  logo:         v.optional(v.string()), // لوگو
+  description:  v.optional(v.string()), // توضیحات
+  isActive:     v.boolean(),           // فعال/غیرفعال
+  createdAt:    v.number(),            // تاریخ ایجاد
+})
+```
+
+**ایندکس‌ها:** `by_slug`, `by_isActive`
+
+---
+
+## ۶. سبد خرید (`cartItems`)
+
+```typescript
+cartItems: defineTable({
+  userId:     v.id("users"),    // 🔗 کاربر
+  productId:  v.id("products"), // 🔗 محصول
+  quantity:   v.number(),       // تعداد
+  createdAt:  v.number(),       // تاریخ اضافه شدن
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_user_product` (ترکیبی — جلوگیری از تکرار)
+
+---
+
+## ۷. سفارشات (`orders`)
+
+```typescript
+orders: defineTable({
+  orderNumber:    v.string(),            // شماره سفارش یکتا
+  userId:         v.id("users"),         // 🔗 کاربر
+  items:          v.array(v.object({     // آیتم‌های سفارش
+    productId:  v.id("products"),        // 🔗 محصول
+    name:       v.string(),              // نام محصول در زمان سفارش
+    quantity:   v.number(),              // تعداد
+    price:      v.number(),              // قیمت واحد
+    total:      v.number(),              // قیمت کل آیتم
+  })),
+  subtotal:       v.number(),            // مبلغ خالص
+  tax:            v.number(),            // مالیات
+  shippingCost:   v.number(),            // هزینه ارسال
+  discount:       v.number(),            // مبلغ تخفیف
+  total:          v.number(),            // مبلغ نهایی
+  status:         v.union(               // وضعیت سفارش
+    v.literal("pending"),
+    v.literal("paid"),
+    v.literal("processing"),
+    v.literal("shipped"),
+    v.literal("delivered"),
+    v.literal("cancelled"),
+  ),
+  paymentStatus:  v.union(               // وضعیت پرداخت
+    v.literal("pending"),
+    v.literal("paid"),
+    v.literal("failed"),
+    v.literal("refunded"),
+  ),
+  paymentMethod:  v.string(),            // روش پرداخت
+  transactionId:  v.optional(v.string()),// شماره تراکنش
+  shippingMethod: v.string(),            // روش ارسال
+  trackingCode:   v.optional(v.string()),// کد رهگیری پست
+  address:        v.string(),            // آدرس ارسال
+  postalCode:     v.string(),            // کد پستی
+  notes:          v.optional(v.string()),// یادداشت
+  receiveSms:     v.optional(v.boolean()),// دریافت پیامک
+  department:     v.optional(v.string()),// دپارتمان مسئول
+  createdAt:      v.number(),            // تاریخ ایجاد
+  updatedAt:      v.number(),            // تاریخ بروزرسانی
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_orderNumber`, `by_status`, `by_createdAt`
+
+> **وضعیت سفارش (State Machine):**
+> ```
+> pending → paid → processing → shipped → delivered
+> pending → cancelled
+> paid → cancelled (بازپرداخت)
+> ```
+
+---
+
+## ۸. تخفیف‌ها (`discounts`)
+
+```typescript
+discounts: defineTable({
+  code:               v.string(),            // کد تخفیف یکتا
+  type:               v.union(               // نوع تخفیف
+    v.literal("percentage"),                 // درصدی
+    v.literal("fixed"),                      // مبلغ ثابت
+    v.literal("gift_card"),                  // کارت هدیه
+  ),
+  value:              v.number(),            // مقدار تخفیف (درصد یا تومان)
+  minOrderAmount:     v.optional(v.number()),// حداقل مبلغ سفارش
+  maxDiscount:        v.optional(v.number()),// حداکثر مبلغ تخفیف
+  startDate:          v.number(),            // تاریخ شروع
+  endDate:            v.number(),            // تاریخ پایان
+  usageLimit:         v.optional(v.number()),// حداکثر تعداد استفاده
+  usedCount:          v.number(),            // تعداد استفاده شده
+  isActive:           v.boolean(),           // فعال/غیرفعال
+  productId:          v.optional(v.id("products")),    // 🔗 محصول خاص
+  categoryId:         v.optional(v.id("categories")),  // 🔗 دسته خاص
+  targetUserIds:      v.optional(v.array(v.id("users"))), // 🔗 کاربران هدف
+  volumeDiscounts:    v.optional(v.array(v.object({    // تخفیف حجمی
+    minQuantity:     v.number(),
+    discountPercent: v.number(),
+  }))),
+  discountType:       v.optional(v.union(    // نوع ویژه
+    v.literal("general"),                    // عمومی
+    v.literal("welcome"),                    // خوش‌آمدگویی
+    v.literal("birthday"),                   // تولد
+    v.literal("loyalty"),                    // وفاداری
+    v.literal("volume"),                     // حجمی
+  )),
+  createdAt:          v.number(),
+  updatedAt:          v.optional(v.number()),
+})
+```
+
+**ایندکس‌ها:** `by_code`, `by_isActive`
+
+---
+
+## ۹. روش‌های ارسال (`shippingMethods`)
+
+```typescript
+shippingMethods: defineTable({
+  name:                    v.string(),           // نام انگلیسی
+  nameFa:                  v.string(),           // نام فارسی
+  type:                    v.union(              // نوع ارسال
+    v.literal("pickup"),                         // حضوری
+    v.literal("post"),                           // پست
+    v.literal("courier"),                        // پیک
+    v.literal("express"),                        // اکسپرس
+  ),
+  icon:                    v.optional(v.string()), // آیکون
+  image:                   v.optional(v.string()), // تصویر کاستوم
+  cost:                    v.number(),           // هزینه ثابت (تومان)
+  freeShippingMinAmount:   v.optional(v.number()), // حداقل مبلغ ارسال رایگان
+  regions:                 v.optional(v.array(v.string())), // مناطق تحت پوشش
+  isActive:                v.boolean(),           // فعال/غیرفعال
+  createdAt:               v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_isActive`
+
+---
+
+## ۱۰. تنظیمات (`settings`)
+
+```typescript
+settings: defineTable({
+  key:        v.string(),    // کلید تنظیم (یکتا)
+  value:      v.any(),       // مقدار (JSON)
+  category:   v.string(),    // دسته‌بندی (general, seo, payment, ...)
+  isPublic:   v.boolean(),   // آیا عمومی است؟
+  updatedAt:  v.number(),    // تاریخ بروزرسانی
+})
+```
+
+**ایندکس‌ها:** `by_key`, `by_category`
+
+> 🔑 **کلیدهای مهم تنظیمات:**
+>
+> | کلید | دسته | توضیح |
+> |------|------|-------|
+> | `siteName` | general | نام سایت |
+> | `siteDescription` | general | توضیحات سایت |
+> | `sitePhone` | general | تلفن |
+> | `siteEmail` | general | ایمیل |
+> | `siteAddress` | general | آدرس |
+> | `seoTitle` | seo | عنوان SEO |
+> | `seoDescription` | seo | توضیحات SEO |
+> | `seoKeywords` | seo | کلمات کلیدی |
+> | `activeTheme` | theme | تم فعال |
+> | `sidebarTheme` | theme | تم سایدبار |
+> | `browserThemeColor` | theme | رنگ نوار مرورگر |
+> | `customColors` | theme | رنگ‌های سفارشی |
+> | `captchaEnabled` | security | فعال بودن کپچا |
+> | `lockScreenEnabled` | security | فعال بودن قفل صفحه |
+> | `lockScreenTimeout` | security | زمان قفل خودکار (دقیقه) |
+> | `paymentGateways` | payment | درگاه‌های پرداخت |
+> | `smsProvider` | sms | تنظیمات پنل پیامکی |
+> | `emailProvider` | email | تنظیمات ایمیل |
+> | `taxRate` | finance | نرخ مالیات |
+> | `landingNav` | landing | تنظیمات نوار ناوبری صفحه اصلی |
+> | `productSections` | landing | بخش‌های محصولات صفحه اصلی |
+> | `landingFeatures` | landing | ویژگی‌های صفحه اصلی |
+> | `landingBanners` | landing | بنرهای صفحه اصلی |
+> | `faqItems` | chat | سوالات متداول چت |
+
+---
+
+## ۱۱. اعلانات (`notifications`)
+
+```typescript
+notifications: defineTable({
+  userId:    v.id("users"),    // 🔗 کاربر هدف
+  title:     v.string(),       // عنوان
+  message:   v.string(),       // پیام
+  type:      v.string(),       // نوع (order, system, promotion, ...)
+  isRead:    v.boolean(),      // خوانده شده
+  link:      v.optional(v.string()), // لینک مرتبط
+  createdAt: v.number(),       // تاریخ ایجاد
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_user_read` (ترکیبی)
+
+---
+
+## ۱۲. تیکت‌ها (`tickets`)
+
+```typescript
+tickets: defineTable({
+  userId:          v.id("users"),          // 🔗 کاربر ایجادکننده
+  subject:         v.string(),             // موضوع
+  message:         v.string(),             // پیام اولیه
+  category:        v.union(                // دسته‌بندی
+    v.literal("technical"),                // فنی
+    v.literal("financial"),                // مالی
+    v.literal("product"),                  // محصولات
+    v.literal("general"),                  // عمومی
+  ),
+  priority:        v.union(                // اولویت
+    v.literal("low"),                      // کم
+    v.literal("medium"),                   // متوسط
+    v.literal("high"),                     // بالا
+    v.literal("critical"),                 // بحرانی
+  ),
+  status:          v.union(                // وضعیت
+    v.literal("open"),                     // باز
+    v.literal("in_progress"),              // در حال بررسی
+    v.literal("answered"),                 // پاسخ داده شده
+    v.literal("closed"),                   // بسته شده
+  ),
+  assigneeId:      v.optional(v.id("users")), // 🔗 اپراتور مسئول
+  department:      v.optional(v.string()),    // دپارتمان
+  rating:          v.optional(v.number()),    // امتیاز رضایت (۱-۵)
+  ratingFeedback:  v.optional(v.string()),    // بازخورد
+  createdAt:       v.number(),
+  updatedAt:       v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_status`, `by_assignee`
+
+> **وضعیت تیکت (State Machine):**
+> ```
+> open → in_progress → answered → closed
+> open → closed (بستن مستقیم)
+> ```
+
+---
+
+## ۱۳. پاسخ‌های تیکت (`ticketReplies`)
+
+```typescript
+ticketReplies: defineTable({
+  ticketId:    v.id("tickets"),             // 🔗 تیکت والد
+  userId:      v.id("users"),              // 🔗 نویسنده پاسخ
+  message:     v.string(),                 // متن پاسخ
+  attachments: v.optional(v.array(v.string())), // فایل‌های پیوست
+  createdAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_ticket`
+
+---
+
+## ۱۴. نقش‌ها (`roles`)
+
+```typescript
+roles: defineTable({
+  name:        v.string(),           // نام انگلیسی (admin, manager, ...)
+  nameFa:      v.string(),           // نام فارسی
+  permissions: v.array(v.string()),  // لیست دسترسی‌ها
+  isSystem:    v.boolean(),          // نقش سیستمی (قابل حذف نیست)
+  isActive:    v.boolean(),          // فعال/غیرفعال
+  createdAt:   v.number(),
+  updatedAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_name`
+
+> **نقش‌های پیش‌فرض:** admin, manager, operator, representative, user, member
+
+> **دسترسی‌ها (Permissions):**
+> `users.read`, `users.write`, `products.read`, `products.write`, `orders.read`, `orders.write`,
+> `settings.read`, `settings.write`, `tickets.read`, `tickets.write`, `reports.read`,
+> `roles.read`, `roles.write`, `blog.read`, `blog.write`
+
+---
+
+## ۱۵. پیام‌های چت (`messages`)
+
+```typescript
+messages: defineTable({
+  chatId:       v.string(),              // شناسه مکالمه (ترکیب دو کاربر)
+  senderId:     v.string(),              // شناسه فرستنده
+  receiverId:   v.string(),              // شناسه گیرنده
+  body:         v.string(),              // متن پیام
+  attachments:  v.optional(v.array(v.string())), // فایل‌های پیوست
+  isRead:       v.boolean(),             // خوانده شده
+  readAt:       v.optional(v.number()),  // زمان خواندن
+  createdAt:    v.number(),              // زمان ارسال
+  sessionId:    v.optional(v.string()),  // شناسه نشست چت
+  senderName:   v.optional(v.string()),  // نام فرستنده (مهمان)
+  senderEmail:  v.optional(v.string()),  // ایمیل فرستنده
+  senderPhone:  v.optional(v.string()),  // تلفن فرستنده
+  ipAddress:    v.optional(v.string()),  // آدرس IP
+  chatEnded:    v.optional(v.boolean()),  // چت پایان یافته
+  endedBy:      v.optional(v.string()),  // چه کسی پایان داد
+  endedAt:      v.optional(v.number()),  // زمان پایان
+})
+```
+
+**ایندکس‌ها:** `by_chatId`, `by_sender`, `by_receiver`
+
+> 💬 **شناسه چت (`chatId`):** از ترکیب دو شناسه کاربر به صورت الفبایی ساخته می‌شود: `[id1, id2].sort().join("-")`
+
+---
+
+## ۱۶. لاگ فعالیت (`auditLogs`)
+
+```typescript
+auditLogs: defineTable({
+  action:    v.string(),           // نوع عملیات (create, update, delete, login, ...)
+  entity:    v.string(),           // نهاد (user, product, order, ...)
+  entityId:  v.string(),           // شناسه نهاد
+  userId:    v.id("users"),        // 🔗 کاربر انجام‌دهنده
+  details:   v.optional(v.string()), // جزئیات
+  ip:        v.optional(v.string()), // آدرس IP
+  createdAt: v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_entity`, `by_action`
+
+---
+
+## ۱۷. بازدید محصولات (`productViews`)
+
+```typescript
+productViews: defineTable({
+  productId:  v.id("products"),             // 🔗 محصول
+  userId:     v.optional(v.id("users")),    // 🔗 کاربر (اختیاری)
+  sessionId:  v.string(),                   // شناسه نشست مرورگر
+  viewDate:   v.number(),                   // تاریخ بازدید
+})
+```
+
+**ایندکس‌ها:** `by_product`, `by_viewDate`
+
+---
+
+## ۱۸. رزرو (`bookings`)
+
+```typescript
+bookings: defineTable({
+  userId:    v.id("users"),          // 🔗 کاربر
+  service:   v.string(),             // نام خدمت
+  date:      v.number(),             // تاریخ (timestamp)
+  time:      v.string(),             // ساعت
+  status:    v.union(                // وضعیت
+    v.literal("pending"),
+    v.literal("confirmed"),
+    v.literal("cancelled"),
+    v.literal("completed"),
+  ),
+  notes:     v.optional(v.string()), // یادداشت
+  createdAt: v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_date`, `by_status`
+
+---
+
+## ۱۹. قالب‌های ایمیل (`emailTemplates`)
+
+```typescript
+emailTemplates: defineTable({
+  name:       v.string(),            // نام قالب
+  subject:    v.string(),            // موضوع ایمیل
+  body:       v.string(),            // محتوا (متنی یا HTML)
+  type:       v.string(),            // نوع (registration, order, password_reset, ...)
+  variables:  v.array(v.string()),   // متغیرهای قابل استفاده
+  isActive:   v.boolean(),           // فعال/غیرفعال
+  createdAt:  v.number(),
+  updatedAt:  v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_type`, `by_isActive`
+
+---
+
+## ۲۰. علاقه‌مندی‌ها (`wishlists`)
+
+```typescript
+wishlists: defineTable({
+  userId:    v.id("users"),    // 🔗 کاربر
+  productId: v.id("products"), // 🔗 محصول
+  createdAt: v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`, `by_user_product` (جلوگیری از تکرار)
+
+---
+
+## ۲۱. نظرات (`reviews`)
+
+```typescript
+reviews: defineTable({
+  userId:      v.id("users"),    // 🔗 کاربر
+  productId:   v.id("products"), // 🔗 محصول
+  rating:      v.number(),       // امتیاز (۱-۵)
+  title:       v.optional(v.string()), // عنوان نظر
+  comment:     v.optional(v.string()), // متن نظر
+  isApproved:  v.boolean(),      // تایید شده توسط ادمین
+  createdAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_product`, `by_user`, `by_product_approved`
+
+---
+
+## ۲۲. امتیازات وفاداری (`loyaltyPoints`)
+
+```typescript
+loyaltyPoints: defineTable({
+  userId:    v.id("users"),              // 🔗 کاربر
+  points:    v.number(),                 // تعداد امتیاز
+  reason:    v.string(),                 // دلیل (purchase, referral, birthday, ...)
+  orderId:   v.optional(v.id("orders")), // 🔗 سفارش مرتبط
+  createdAt: v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_user`
+
+---
+
+## ۲۳. خبرنامه (`newsletters`)
+
+```typescript
+newsletters: defineTable({
+  email:     v.string(),            // ایمیل مشترک
+  isActive:  v.boolean(),           // فعال
+  createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+})
+```
+
+**ایندکس‌ها:** `by_email`
+
+---
+
+## ۲۴. تلاش‌های ورود (`loginAttempts`)
+
+```typescript
+loginAttempts: defineTable({
+  identifier:  v.string(),           // شناسه (ایمیل یا تلفن)
+  attempts:    v.number(),           // تعداد تلاش‌ها
+  lastAttempt: v.number(),           // آخرین تلاش
+  lockedUntil: v.optional(v.number()), // قفل تا (timestamp)
+  createdAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_identifier`
+
+> 🔒 **سیستم قفل حساب:** پس از ۵ تلاش ناموفق، حساب به مدت ۱۵ دقیقه قفل می‌شود.
+
+---
+
+## ۲۵. صفحات محتوا (`contentPages`)
+
+```typescript
+contentPages: defineTable({
+  slug:          v.string(),           // اسلاگ (terms, privacy, return)
+  title:         v.string(),           // عنوان فارسی
+  titleEn:       v.optional(v.string()), // عنوان انگلیسی
+  content:       v.string(),           // محتوای فارسی
+  contentEn:     v.optional(v.string()), // محتوای انگلیسی
+  lastUpdated:   v.string(),           // تاریخ آخرین بروزرسانی
+  isActive:      v.boolean(),
+  createdAt:     v.number(),
+  updatedAt:     v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_slug`, `by_isActive`
+
+---
+
+## ۲۶. ترجمه‌ها (`translations`)
+
+```typescript
+translations: defineTable({
+  key:       v.string(),            // کلید ترجمه (یکتا)
+  fa:        v.string(),            // متن فارسی
+  en:        v.string(),            // متن انگلیسی
+  category:  v.optional(v.string()), // دسته (sidebar, topbar, toolbar, ...)
+  updatedAt: v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_key`, `by_category`
+
+---
+
+## ۲۷. امتیازدهی چت (`chatRatings`)
+
+```typescript
+chatRatings: defineTable({
+  chatId:      v.string(),            // شناسه چت
+  sessionId:   v.string(),            // شناسه نشست
+  rating:      v.number(),            // امتیاز (۱-۵)
+  feedback:    v.optional(v.string()), // بازخورد
+  guestName:   v.optional(v.string()), // نام مهمان
+  guestEmail:  v.optional(v.string()), // ایمیل مهمان
+  ratedAt:     v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_chatId`, `by_sessionId`
+
+---
+
+## ۲۸. لایسنس‌ها (`licenses`)
+
+```typescript
+licenses: defineTable({
+  key:         v.string(),              // کلید لایسنس
+  type:        v.union(                 // نوع
+    v.literal("monthly"),               // ماهانه
+    v.literal("yearly"),                // سالانه
+    v.literal("permanent"),             // دائمی
+  ),
+  expiryDate:  v.optional(v.number()),  // تاریخ انقضا
+  isActive:    v.boolean(),             // فعال
+  features:    v.any(),                 // بخش‌های فعال (JSON)
+  createdAt:   v.number(),
+  updatedAt:   v.number(),
+})
+```
+
+**ایندکس‌ها:** `by_key`
+
+---
+
+## ۲۹. کارت‌های هدیه (`giftCards`)
+
+```typescript
+giftCards: defineTable({
+  code:       v.string(),            // کد کارت
+  amount:     v.number(),            // مبلغ
+  balance:    v.number(),            // موجودی باقیمانده
+  userId:     v.optional(v.id("users")), // 🔗 خریدار
+  isActive:   v.boolean(),
+  expiresAt:  v.optional(v.number()), // تاریخ انقضا
+  createdAt:  v.number(),
+})
+```
+
+---
+
+## ۳۰. راهنمای انواع
+
+### انواع وضعیت سفارش
+| مقدار | فارسی | توضیح |
+|-------|-------|-------|
+| `pending` | در انتظار | سفارش ثبت شده ولی پرداخت نشده |
+| `paid` | پرداخت شده | پرداخت موفق |
+| `processing` | در حال پردازش | در حال آماده‌سازی |
+| `shipped` | ارسال شده | به پست تحویل شده |
+| `delivered` | تحویل شده | به دست مشتری رسیده |
+| `cancelled` | لغو شده | لغو شده |
+
+### انواع وضعیت پرداخت
+| مقدار | فارسی |
+|-------|-------|
+| `pending` | در انتظار |
+| `paid` | موفق |
+| `failed` | ناموفق |
+| `refunded` | بازپرداخت شده |
+
+### انواع اولویت تیکت
+| مقدار | فارسی | رنگ |
+|-------|-------|-----|
+| `low` | کم | 🟢 سبز |
+| `medium` | متوسط | 🟡 زرد |
+| `high` | بالا | 🟠 نارنجی |
+| `critical` | بحرانی | 🔴 قرمز |
+
+### انواع دسته‌بندی تیکت
+| مقدار | فارسی |
+|-------|-------|
+| `technical` | فنی |
+| `financial` | مالی |
+| `product` | محصولات |
+| `general` | عمومی |
+
+### انواع روش ارسال
+| مقدار | فارسی |
+|-------|-------|
+| `pickup` | حضوری |
+| `post` | پست |
+| `courier` | پیک |
+| `express` | اکسپرس |
+
+---
+
+## ۳۱. ارتباطات
+
+```
+┌──────────┐     ┌──────────────┐     ┌────────────┐
+│  users   │────<│  cartItems   │>────│  products  │
+│          │     └──────────────┘     │            │
+│          │────<┌──────────────┐     │            │
+│          │     │   orders     │>────│            │
+│          │     └──────────────┘     │            │
+│          │────<┌──────────────┐     └─────┬──────┘
+│          │     │   reviews    │>───────────┘
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │  wishlists   │>──── products
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │   tickets    │
+│          │     └──────┬───────┘
+│          │            │
+│          │     ┌──────┴───────┐
+│          │────<│ticketReplies │
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │ notifications│
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │ auditLogs    │
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │loyaltyPoints │>──── orders (اختیاری)
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │productViews  │>──── products
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │  bookings    │
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │chatRatings   │
+│          │     └──────────────┘
+│          │────<┌──────────────┐
+│          │     │  messages    │ (chatId-based)
+│          │     └──────────────┘
+└──────────┘
+
+┌──────────────┐     ┌──────────────┐
+│  categories  │────<│  products    │
+│              │     └──────────────┘
+│  (self-ref)  │────<│  categories  │ (parentId)
+└──────────────┘
+
+┌──────────────┐
+│   settings   │ (key-value store)
+└──────────────┘
+
+┌──────────────┐
+│    roles     │ (permissions array)
+└──────────────┘
+```
+
+---
+
+## نکات فنی مهم
+
+### ۱. `v.any()` در فیلدها
+برخی فیلدها مانند `features` در محصولات و `value` در تنظیمات از `v.any()` استفاده می‌کنند.
+این بدان معناست که **اعتبارسنجی نوع در سطح اسکیما انجام نمی‌شود** و باید در سطح application اعتبارسنجی شوند.
+
+### ۲. شناسه‌های ارجاعی
+تمام فیلدهای `v.id("tableName")` ارجاع به جدول دیگری هستند.
+Convex تضمین می‌کند که مقدار این فیلدها یک شناسه معتبر باشد ولی **完整性 (integrity)** را تضمین نمی‌کند — یعنی اگر رکورد والد حذف شود، فرزندان حذف نمی‌شوند.
+
+### ۳. `schemaValidation: false`
+در انتهای اسکیما تنظیم شده. یعنی اعتبارسنجی دقیق اسکیما غیرفعال است.
+این ممکن است برای سازگاری با داده‌های قدیمی باشد.
+
+### ۴. جداول جدید اضافه شده
+جدول‌های `giftCards` و `activityLogs` نیز در اسکیما وجود دارند ولی ساختار دقیقشان در بالا آورده نشد.
+برای اطلاعات بیشتر فایل `src/convex/schema.ts` را ببینید.
+
+---
+
+> 📝 **تعداد کل جداول:** ۲۹+ جدول (شامل جداول Auth)
+> 📝 **تعداد کل ایندکس‌ها:** ۵۰+ ایندکس
+> 📝 **تعداد ارتباطات خارجی:** ۲۵+ ارتباط بین جداول

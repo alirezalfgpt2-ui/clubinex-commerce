@@ -1,0 +1,18 @@
+{
+  "name": "Clubinex Commerce",
+  "short_name": "Clubinex",
+  "description": "فروشگاه آنلاین Clubinex",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
