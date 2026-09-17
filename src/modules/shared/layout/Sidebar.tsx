@@ -5,6 +5,7 @@ import { SidebarSearch } from "./sidebar/SidebarSearch";
 import { SidebarNav } from "./sidebar/SidebarNav";
 import { NAV_GROUPS, STORAGE_KEY } from "./sidebar/nav-config";
 import { applySidebarTheme, getCurrentSidebarTheme } from "@/config/sidebar-themes";
+import { useLicense } from "@/lib/useLicense";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,16 +43,25 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { isModuleEnabled } = useLicense();
+
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return NAV_GROUPS;
-    const q = searchQuery.toLowerCase();
-    return NAV_GROUPS.map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) => item.label.toLowerCase().includes(q) || item.to.toLowerCase().includes(q)
-      ),
-    })).filter((group) => group.items.length > 0);
-  }, [searchQuery]);
+    return NAV_GROUPS
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          // فیلتر بر اساس لایسنس
+          if (item.module && !isModuleEnabled(item.module)) return false;
+          // فیلتر بر اساس جستجو
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            return item.label.toLowerCase().includes(q) || item.to.toLowerCase().includes(q);
+          }
+          return true;
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [searchQuery, isModuleEnabled]);
 
   return (
     <aside

@@ -605,6 +605,8 @@ const schema = defineSchema(
 
     licenses: defineTable({
       key: v.string(),
+      clientName: v.optional(v.string()),
+      machineId: v.optional(v.string()),
       type: v.union(
         v.literal("monthly"),
         v.literal("yearly"),
@@ -613,9 +615,10 @@ const schema = defineSchema(
       expiryDate: v.optional(v.number()),
       isActive: v.boolean(),
       features: v.any(),
+      modules: v.optional(v.any()),
       createdAt: v.number(),
       updatedAt: v.number(),
-    }).index("by_key", ["key"]),
+    }).index("by_key", ["key"]).index("by_machine", ["machineId"]),
   },
   {
     schemaValidation: false,

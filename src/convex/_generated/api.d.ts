@@ -24,6 +24,7 @@ import type * as emailTemplates from "../emailTemplates.js";
 import type * as giftCards from "../giftCards.js";
 import type * as http from "../http.js";
 import type * as inventory from "../inventory.js";
+import type * as license from "../license.js";
 import type * as loyaltyPoints from "../loyaltyPoints.js";
 import type * as messages from "../messages.js";
 import type * as newsletters from "../newsletters.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   giftCards: typeof giftCards;
   http: typeof http;
   inventory: typeof inventory;
+  license: typeof license;
   loyaltyPoints: typeof loyaltyPoints;
   messages: typeof messages;
   newsletters: typeof newsletters;

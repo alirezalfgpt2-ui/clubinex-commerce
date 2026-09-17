@@ -85,10 +85,13 @@ export const listLicenses = query({
 export const createLicense = mutation({
   args: {
     key: v.string(),
+    clientName: v.optional(v.string()),
+    machineId: v.optional(v.string()),
     type: v.union(v.literal("monthly"), v.literal("yearly"), v.literal("permanent")),
     expiryDate: v.optional(v.number()),
     isActive: v.boolean(),
     features: v.any(),
+    modules: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
